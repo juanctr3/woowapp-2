@@ -1898,4 +1898,3 @@ if ($customer) {
 WooWApp::get_instance();
 
 
-
