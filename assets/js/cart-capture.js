@@ -28,7 +28,7 @@ jQuery(document).ready(function($) {
     }
 
     let isProcessing = false;
-    let previousData = null; // Nuevo: Caché para datos previos
+    let previousData = null; // Caché para datos previos
 
     // ==========================================
     // 📊 SELECTORES DE CAMPOS - CONFIGURACIÓN BASE
@@ -66,23 +66,29 @@ jQuery(document).ready(function($) {
             '#billing_first_name',
             '#billing-first-name',
             'input[name="billing_first_name"]',
+            'input[name="first_name"]', // NUEVO: Para temas que usan first_name
             '.woocommerce-billing-first_name input',
+            '.form-row-first input', // NUEVO: Común en temas como Storefront
             '[data-field-name="billing_first_name"]',
             '[aria-label*="nombre"]',
             '[aria-label*="first name"]',
             '[placeholder*="nombre"]',
             '[placeholder*="first name"]',
+            'input[id*="first"]', // NUEVO: Fallback genérico
         ],
         billing_last_name: [
             '#billing_last_name',
             '#billing-last-name',
             'input[name="billing_last_name"]',
+            'input[name="last_name"]', // NUEVO: Para temas que usan last_name
             '.woocommerce-billing-last_name input',
+            '.form-row-last input', // NUEVO: Común en temas
             '[data-field-name="billing_last_name"]',
             '[aria-label*="apellido"]',
             '[aria-label*="last name"]',
             '[placeholder*="apellido"]',
             '[placeholder*="last name"]',
+            'input[id*="last"]', // NUEVO: Fallback genérico
         ],
         billing_address_1: [
             '#billing_address_1',
@@ -152,10 +158,8 @@ jQuery(document).ready(function($) {
         ],
     };
 
-    // ==========================================
-    // 🔄 USAR CONFIGURACIÓN PERSONALIZADA SI EXISTE
-    // ==========================================
-    
+    // Resto del código JS permanece igual (copia el resto desde tu archivo original, desde // USAR CONFIGURACIÓN PERSONALIZADA SI EXISTE hasta el final)
+    // ... (pega aquí el código desde if (typeof wseFieldConfig ... hasta el final del archivo)
     if (typeof wseFieldConfig !== 'undefined' && wseFieldConfig && Object.keys(wseFieldConfig).length > 0) {
         if (SERVER_CONFIG.debug) {
             console.log('%c📋 Config personalizada encontrada', 'color: #10b981', wseFieldConfig);
@@ -430,7 +434,7 @@ jQuery(document).ready(function($) {
             return;
         }
 
-        // Nuevo: Comparar con datos previos para evitar envíos duplicados
+        // Comparar con datos previos para evitar envíos duplicados
         const currentDataJson = JSON.stringify(data);
         if (previousData && currentDataJson === previousData) {
             if (SERVER_CONFIG.debug) {
@@ -487,7 +491,7 @@ jQuery(document).ready(function($) {
                             console.log(`👁️  Campo cambió: ${fieldName}`);
                         }
                         
-                        // Debounce: Esperar 3 segundos antes de capturar (aumentado para menos envíos)
+                        // Debounce: Esperar 3 segundos antes de capturar
                         clearTimeout(window.captureDebounceTimer);
                         window.captureDebounceTimer = setTimeout(captureAndSend, 3000);
                     });
@@ -567,7 +571,7 @@ jQuery(document).ready(function($) {
             captureAndSend();
         }, 3000);
 
-        // Captura periódica cada 60 segundos (aumentado para menos envíos)
+        // Captura periódica cada 60 segundos
         setInterval(() => {
             if (SERVER_CONFIG.debug) {
                 console.log('%c⏰ Captura periódica', 'color: #f59e0b');
