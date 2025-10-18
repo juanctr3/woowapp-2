@@ -811,9 +811,9 @@ add_action('wse_pro_send_abandoned_cart_3', [$this, 'debug_force_send_message'],
         // 6. Crear objeto para API
 $cart_obj = (object)[
     'id' => $cart_row->id,
-    'phone' => $cart_row->phone,
+    'phone' => !empty($cart_row->billing_phone) ? $cart_row->billing_phone : $cart_row->phone, // <-- Usamos el teléfono correcto
     'cart_contents' => $cart_row->cart_contents,
-    'billing_country' => $cart_row->billing_country // <-- LÍNEA AÑADIDA
+    'billing_country' => $cart_row->billing_country // <-- AÑADIR ESTA LÍNEA (lee el país del carrito)
 ];
         
         // 7. Enviar mensaje
@@ -1803,6 +1803,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
