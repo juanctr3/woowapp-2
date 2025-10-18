@@ -4,6 +4,7 @@
  *
  * @package WooWApp
  * @version 2.2.2
+ * @MODIFIED: Corregida la función get_first_cart_item_image_url para usar product_id.
  */
 
 if (!defined('ABSPATH')) {
@@ -27,8 +28,7 @@ class WSE_Pro_Placeholders {
     /**
      * Reemplaza placeholders para mensajes de carritos abandonados.
      * MEJORADO: Ahora usa los nuevos campos de billing y formatos mejorados
-     * 
-     * @param string   $template La plantilla del mensaje.
+     * * @param string   $template La plantilla del mensaje.
      * @param stdClass $cart_row El objeto de la fila de la base de datos del carrito.
      * @param array    $coupon_data Datos del cupón generado (opcional).
      * @return string            El mensaje con los valores reemplazados.
@@ -285,20 +285,45 @@ class WSE_Pro_Placeholders {
      */
     public static function get_first_cart_item_image_url($cart_contents) {
         $cart_array = maybe_unserialize($cart_contents);
-        if (empty($cart_array) || !is_array($cart_array)) return '';
+        if (empty($cart_array) || !is_array($cart_array)) {
+            return '';
+        }
 
         $first_item = reset($cart_array);
-        if (!isset($first_item['data']) || !is_a($first_item['data'], 'WC_Product')) return '';
         
-        $product = $first_item['data'];
+        // --- INICIO DE LA CORRECCIÓN ---
+        // El carrito en la BD no tiene el objeto 'data', debemos usar el 'product_id'
+        if (!isset($first_item['product_id'])) {
+            return ''; // No hay producto
+        }
+
+        $product_id = absint($first_item['product_id']);
+        $variation_id = isset($first_item['variation_id']) ? absint($first_item['variation_id']) : 0;
+        
+        // Obtener el producto (variación o simple)
+        $product = wc_get_product($variation_id > 0 ? $variation_id : $product_id);
+        
+        if (!$product) {
+            return ''; // El producto ya no existe
+        }
+        // --- FIN DE LA CORRECCIÓN ---
+
         $image_id = $product->get_image_id();
+        
+        // Si es una variación sin imagen, buscar la del padre
         if (!$image_id && $product->is_type('variation')) {
             $parent_product = wc_get_product($product->get_parent_id());
             if ($parent_product) {
                 $image_id = $parent_product->get_image_id();
             }
         }
-        return $image_id ? wp_get_attachment_image_url($image_id, 'full') : '';
+        
+        // Si aún no hay imagen (ej. producto simple sin imagen), no devolvemos nada
+        if (!$image_id) {
+            return '';
+        }
+
+        return wp_get_attachment_image_url($image_id, 'full');
     }
     
     /**
@@ -376,8 +401,7 @@ class WSE_Pro_Placeholders {
     /**
      * Define los placeholders disponibles para la UI del admin, agrupados por categoría.
      * MEJORADO: Agregados nuevos placeholders para carritos abandonados
-     * 
-     * @return array
+     * * @return array
      */
     public static function get_all_placeholders_grouped() {
         return [
@@ -463,8 +487,7 @@ class WSE_Pro_Placeholders {
     /**
      * Define los emojis disponibles para la UI del admin, agrupados por categoría.
      * MEJORADO: Agregados muchos más emojis útiles
-     * 
-     * @return array
+     * * @return array
      */
     public static function get_all_emojis_grouped() {
         return [
