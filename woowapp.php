@@ -818,7 +818,9 @@ $cart_obj = (object)[
         
         // 7. Enviar mensaje
         $api_handler = new WSE_Pro_API_Handler();
-        $result = $api_handler->send_message($cart_row->phone, $message, $cart_obj, 'customer');
+        // Usar billing_phone si existe, si no, usar phone.
+$phone_to_send = !empty($cart_row->billing_phone) ? $cart_row->billing_phone : $cart_row->phone;
+$result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'customer');;
         
         // 8. Procesar resultado
         if ($result['success']) {
@@ -1801,6 +1803,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
