@@ -820,6 +820,27 @@ $cart_obj = (object)[
         $api_handler = new WSE_Pro_API_Handler();
         // Usar billing_phone si existe, si no, usar phone.
 $phone_to_send = !empty($cart_row->billing_phone) ? $cart_row->billing_phone : $cart_row->phone;
+        // --- INICIO CÓDIGO COOLDOWN DE 2 HORAS ---
+$tracking_table = $wpdb->prefix . 'wse_pro_tracking';
+$two_hours_ago = date('Y-m-d H:i:s', current_time('timestamp') - (2 * HOUR_IN_SECONDS));
+
+// Buscar el último mensaje ENVIADO a este número
+$last_sent_time = $wpdb->get_var($wpdb->prepare(
+    "SELECT created_at FROM {$tracking_table} 
+     WHERE event_type = 'sent' 
+     AND JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.phone')) = %s
+     ORDER BY created_at DESC 
+     LIMIT 1",
+    $phone_to_send 
+));
+
+if ($last_sent_time && $last_sent_time > $two_hours_ago) {
+    // Si encontramos un envío reciente (menos de 2 horas), abortamos.
+    $time_diff = human_time_diff(strtotime($last_sent_time), current_time('timestamp'));
+    $this->log_info("🚫 Cooldown activo para {$phone_to_send}. Último envío hace {$time_diff}. Abortando mensaje #{$message_number} para carrito #{$cart_row->id}.");
+    return false; // Salimos de la función send_abandoned_cart_message
+}
+// --- FIN CÓDIGO COOLDOWN ---
 $result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'customer');;
         
         // 8. Procesar resultado
@@ -1815,6 +1836,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
