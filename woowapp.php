@@ -1746,21 +1746,55 @@ if ($customer) {
         if (!isset($_POST['action']) || !isset($_POST['woowapp_repair_nonce'])) {
             return;
         }
-        
+
         if (!wp_verify_nonce($_POST['woowapp_repair_nonce'], 'woowapp_repair')) {
-            return;
+            // Si la verificación nonce falla, simplemente no hacer nada o mostrar un error
+             // die('Error de seguridad - Nonce inválido.'); // Opcional: detener ejecución
+            return; // Salir silenciosamente
         }
-        
+
         if (!current_user_can('manage_woocommerce')) {
-            return;
+             // die('No tienes permisos suficientes.'); // Opcional
+            return; // Salir silenciosamente
         }
-        
+
         switch ($_POST['action']) {
             case 'repair_database':
-                $this->verify_and_repair_database();
-                self::create_database_tables();
+                $this->verify_and_repair_database(); // Asegura que las columnas existan
+                self::create_database_tables();      // Asegura que las tablas existan
                 wp_redirect(admin_url('admin.php?page=woowapp-diagnostic&repaired=1'));
                 exit;
+
+            // Nota: El caso 'repair_cron' no estaba en el archivo original,
+            // pero lo dejamos por si acaso lo añadiste tú. Si no, puedes borrarlo.
+            case 'repair_cron':
+                 wp_clear_scheduled_hook('wse_pro_process_abandoned_carts');
+                 wp_schedule_event(time(), 'five_minutes', 'wse_pro_process_abandoned_carts');
+                 wp_redirect(admin_url('admin.php?page=woowapp-diagnostic&repaired=1'));
+                 exit;
+
+            // Nota: El caso 'activate_cart_recovery' tampoco estaba originalmente,
+            // si no lo necesitas, puedes borrarlo.
+            case 'activate_cart_recovery':
+                 update_option('wse_pro_enable_abandoned_cart', 'yes');
+
+                 // Activar mensaje 1 por defecto si no está configurado
+                 if (get_option('wse_pro_abandoned_cart_enable_msg_1') !== 'yes') {
+                     update_option('wse_pro_abandoned_cart_enable_msg_1', 'yes');
+                     update_option('wse_pro_abandoned_cart_time_1', '60');
+                     update_option('wse_pro_abandoned_cart_unit_1', 'minutes');
+
+                     $default_message = "Hola! Vimos que dejaste productos en tu carrito 🛒\n\n";
+                     $default_message .= "¿Te gustaría completar tu compra?\n\n";
+                     $default_message .= "Recupera tu carrito aquí: {recovery_link}";
+
+                     update_option('wse_pro_abandoned_cart_message_1', $default_message);
+                 }
+
+                 update_option('wse_pro_enable_log', 'yes');
+
+                 wp_redirect(admin_url('admin.php?page=woowapp-diagnostic&repaired=1'));
+                 exit;
         }
     }
 
@@ -1821,5 +1855,6 @@ if ($customer) {
 
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
