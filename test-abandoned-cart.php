@@ -1,11 +1,14 @@
 <?php
 /**
- * Script de Debug para Carritos Abandonados
- * 
- * IMPORTANTE: Sube este archivo a la raíz de WordPress y accede vía navegador
+ * Script de Debug para Carritos Abandonados (v2.2.2+)
+ * * IMPORTANTE: Sube este archivo a la raíz de WordPress y accede vía navegador
  * URL: https://tu-sitio.com/test-abandoned-cart.php
- * 
- * Después de usarlo, ELIMÍNALO por seguridad.
+ * * Después de usarlo, ELIMÍNALO por seguridad.
+ * * ACTUALIZADO: 
+ * - Añadido botón para forzar el cron principal (wse_pro_process_abandoned_carts).
+ * - Eliminados botones obsoletos (force_send).
+ * - Corregida la visualización de eventos cron para buscar el cron principal.
+ * - Corregida la ruta del archivo de log.
  */
 
 // Cargar WordPress
@@ -20,7 +23,7 @@ if (!current_user_can('manage_options')) {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Debug - Carritos Abandonados</title>
+    <title>Debug - Carritos Abandonados (v2.2.2)</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 1200px; margin: 20px auto; padding: 20px; }
         .section { background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 8px; }
@@ -34,42 +37,129 @@ if (!current_user_can('manage_options')) {
         .btn:hover { background: #005a87; }
         .btn-danger { background: #dc3545; }
         .btn-danger:hover { background: #a71d2a; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
         pre { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; overflow-x: auto; }
     </style>
 </head>
 <body>
-    <h1>🛒 Debug - Sistema de Carritos Abandonados</h1>
+    <h1>🛒 Debug - Sistema de Carritos Abandonados (v2.2.2)</h1>
     
     <?php
     global $wpdb;
     $table_name = $wpdb->prefix . 'wse_pro_abandoned_carts';
     $coupons_table = $wpdb->prefix . 'wse_pro_coupons_generated';
+    $tracking_table = $wpdb->prefix . 'wse_pro_tracking'; // Tabla de tracking
     
-    // Acción: Forzar envío
-    if (isset($_GET['action']) && $_GET['action'] === 'force_send' && isset($_GET['cart_id']) && isset($_GET['msg'])) {
-        $cart_id = intval($_GET['cart_id']);
-        $msg_num = intval($_GET['msg']);
-        
+    // Acción: Forzar el Cron Principal (el método correcto para v2.2.2+)
+    if (isset($_GET['action']) && $_GET['action'] === 'force_cron') {
         echo '<div class="section">';
-        echo '<h2>🚀 Forzando envío de Mensaje #' . $msg_num . ' para Carrito #' . $cart_id . '</h2>';
+        echo '<h2>🚀 Ejecutando Procesador Principal de Carritos...</h2>';
         
-        // Ejecutar el hook manualmente
-        do_action('wse_pro_send_abandoned_cart_' . $msg_num, $cart_id);
+        if (class_exists('WooWApp')) {
+            $woowapp_instance = WooWApp::get_instance();
+            
+            if (method_exists($woowapp_instance, 'process_abandoned_carts_cron')) {
+                // Ejecutar la función de procesamiento
+                $woowapp_instance->process_abandoned_carts_cron();
+                echo '<div class="success">✅ Tarea de procesamiento ejecutada. Verifica los logs y si recibiste el mensaje.</div>';
+            } else {
+                echo '<div class="error">❌ ERROR: El método "process_abandoned_carts_cron" no existe en la clase "WooWApp".</div>';
+            }
+        } else {
+            echo '<div class="error">❌ ERROR: La clase "WooWApp" no existe. El plugin no parece estar activo.</div>';
+        }
         
-        echo '<div class="success">✅ Hook ejecutado. Verifica los logs en WooCommerce > Estado > Registros (wse-pro-cart)</div>';
         echo '<a href="?refresh=1" class="btn">↻ Recargar Página</a>';
         echo '</div>';
     }
     
+    // <<<--- AÑADIR ESTE BLOQUE COMPLETO ---<<<
+// Acción: Resetear Cooldown (eliminar tracking de 'sent')
+if (isset($_GET['action']) && $_GET['action'] === 'reset_cooldown' && isset($_GET['phone']) && isset($_GET['cart_id'])) {
+    $phone_to_reset = sanitize_text_field($_GET['phone']);
+    $cart_id_ref = intval($_GET['cart_id']); // Solo para referencia en el mensaje
+
+    // Formatear el teléfono igual que lo hace la función de envío (con código de país)
+    $country_iso = ''; // No tenemos el país aquí, usaremos el default
+    if (class_exists('WSE_Pro_API_Handler')) {
+        // Intentamos obtener el país del carrito si es posible
+         $cart_row_temp = $wpdb->get_row($wpdb->prepare("SELECT billing_country FROM $table_name WHERE id = %d", $cart_id_ref));
+         if ($cart_row_temp) {
+             $country_iso = $cart_row_temp->billing_country;
+         }
+         // Usamos un método estático si existe, o instanciamos
+         if(method_exists('WSE_Pro_API_Handler', 'format_phone_static')) {
+             // Suponiendo que tuvieras un método estático (mejor práctica)
+             // $phone_formatted = WSE_Pro_API_Handler::format_phone_static($phone_to_reset, $country_iso);
+             // Como no existe, instanciamos (menos ideal pero funciona)
+             $temp_handler = new WSE_Pro_API_Handler();
+             // Necesitamos acceder al método privado format_phone de alguna manera,
+             // lo más fácil es replicar su lógica aquí o hacer el método público/estático.
+             // Replicando lógica simplificada:
+             $default_code = get_option('wse_pro_default_country_code', '');
+             $country_codes = include(WP_PLUGIN_DIR . '/woowapp/includes/country-codes.php');
+             $calling_code = !empty($country_iso) ? ($country_codes[$country_iso] ?? $default_code) : $default_code;
+             if ($calling_code && strpos($phone_to_reset, $calling_code) !== 0) {
+                  $phone_formatted = $calling_code . ltrim($phone_to_reset, '0');
+             } else {
+                  $phone_formatted = $phone_to_reset;
+             }
+
+         } else {
+             // Fallback si la clase no existe
+             $phone_formatted = $phone_to_reset;
+         }
+    } else {
+        $phone_formatted = $phone_to_reset; // Fallback
+    }
+
+
+    // Construir la consulta JSON (adaptar si tu versión de MySQL es < 5.7)
+    // Esta consulta busca entradas donde el campo 'phone' dentro del JSON 'event_data' coincida.
+    $json_query_fragment = "JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.phone')) = %s";
+
+    $deleted_rows = $wpdb->delete(
+        $tracking_table,
+        [
+            'event_type' => 'sent',
+            // Usamos un marcador de posición que reemplazaremos directamente
+            // ya que $wpdb->delete no soporta directamente funciones JSON en el WHERE array.
+        ],
+        [
+            '%s', // para event_type
+            // No podemos poner %s para la parte JSON aquí directamente
+        ],
+        // Añadimos la condición JSON manualmente al final de la consulta
+         $wpdb->prepare(" AND " . $json_query_fragment, $phone_formatted)
+
+    );
+
+    if ($deleted_rows !== false) {
+        echo '<div class="success">✅ Cooldown reseteado para el número ' . esc_html($phone_formatted) . ' (referencia carrito #' . $cart_id_ref . '). Se eliminaron ' . $deleted_rows . ' registros de envío.</div>';
+    } else {
+         echo '<div class="error">❌ Error al intentar resetear el cooldown para ' . esc_html($phone_formatted) . '. Error DB: ' . $wpdb->last_error . '</div>';
+    }
+    echo '<a href="?refresh=1" class="btn">↻ Recargar Página</a>';
+}
+// <<<--- FIN BLOQUE AÑADIDO ---<<<
     // Acción: Limpiar carrito
     if (isset($_GET['action']) && $_GET['action'] === 'delete_cart' && isset($_GET['cart_id'])) {
         $cart_id = intval($_GET['cart_id']);
         $wpdb->delete($table_name, ['id' => $cart_id]);
-        echo '<div class="success">✅ Carrito #' . $cart_id . ' eliminado</div>';
+        $wpdb->delete($tracking_table, ['cart_id' => $cart_id]); // Borrar también tracking
+        echo '<div class="success">✅ Carrito #' . $cart_id . ' y su tracking eliminado</div>';
     }
     ?>
     
-    <!-- SECCIÓN 1: Configuración Actual -->
+    <div class="section">
+        <h2>⚡ Probar el Cron Principal (Nuevo)</h2>
+        <p>El sistema v2.2.2 usa un solo cron ('wse_pro_process_abandoned_carts') que revisa todos los carritos. Usa este botón para ejecutarlo manualmente.</p>
+        <a href="?action=force_cron" class="btn btn-success" style="font-size: 16px; padding: 12px 24px;">
+            🚀 Forzar Ejecución del Cron Principal
+        </a>
+    </div>
+    
     <div class="section">
         <h2>⚙️ Configuración Actual</h2>
         <?php
@@ -87,7 +177,7 @@ if (!current_user_can('manage_options')) {
             
             echo '<tr><td><strong>Mensaje ' . $i . '</strong></td><td>';
             echo ($msg_enabled === 'yes' ? '✅ Activo' : '❌ Inactivo') . ' - ';
-            echo $time . ' ' . $unit;
+            echo '<strong>' . $time . ' ' . $unit . '</strong>';
             echo ($coupon_enabled === 'yes' ? ' 🎁 Con cupón' : '');
             echo '</td></tr>';
         }
@@ -95,7 +185,6 @@ if (!current_user_can('manage_options')) {
         ?>
     </div>
     
-    <!-- SECCIÓN 2: Carritos Abandonados -->
     <div class="section">
         <h2>🛒 Carritos Abandonados (últimos 20)</h2>
         <?php
@@ -105,37 +194,40 @@ if (!current_user_can('manage_options')) {
             echo '<div class="info">ℹ️ No hay carritos abandonados registrados</div>';
         } else {
             echo '<table>';
-            echo '<tr><th>ID</th><th>Teléfono</th><th>Nombre</th><th>Total</th><th>Mensajes</th><th>Status</th><th>Creado</th><th>Acciones</th></tr>';
+            echo '<tr><th>ID</th><th>Teléfono / Email</th><th>Nombre</th><th>Total</th><th>Mensajes</th><th>Status</th><th>Creado</th><th>Acciones</th></tr>';
             
             foreach ($carts as $cart) {
+                // Formatear mensajes enviados
                 $messages_sent = explode(',', $cart->messages_sent);
                 $msg_status = '';
                 for ($i = 0; $i < 3; $i++) {
-                    if ($messages_sent[$i] == '1') {
+                    if (isset($messages_sent[$i]) && $messages_sent[$i] == '1') {
                         $msg_status .= '✅';
                     } else {
                         $msg_status .= '⏳';
                     }
                 }
                 
+                // Formatear estado
+                $status_color = '#6c757d'; // gris por defecto
+                if ($cart->status === 'active') $status_color = '#28a745'; // verde
+                if ($cart->status === 'recovered') $status_color = '#007cba'; // azul
+                
                 echo '<tr>';
                 echo '<td><strong>#' . $cart->id . '</strong></td>';
-                echo '<td>' . esc_html($cart->phone) . '</td>';
-                echo '<td>' . esc_html($cart->first_name) . '</td>';
+                echo '<td>' . esc_html($cart->billing_phone ? $cart->billing_phone : $cart->phone) . '<br>' . esc_html($cart->billing_email) . '</td>';
+                echo '<td>' . esc_html($cart->billing_first_name ? $cart->billing_first_name : $cart->first_name) . '</td>';
                 echo '<td>$' . number_format($cart->cart_total, 2) . '</td>';
-                echo '<td>' . $msg_status . '</td>';
-                echo '<td><span style="background: ' . ($cart->status === 'active' ? '#28a745' : '#6c757d') . '; color: white; padding: 2px 8px; border-radius: 3px;">' . $cart->status . '</span></td>';
+                echo '<td><span style="font-size: 18px;">' . $msg_status . '</span></td>';
+                echo '<td><span style="background: ' . $status_color . '; color: white; padding: 2px 8px; border-radius: 3px;">' . $cart->status . '</span></td>';
                 echo '<td>' . date('d/m/Y H:i', strtotime($cart->created_at)) . '</td>';
                 echo '<td>';
-                
-                if ($cart->status === 'active') {
-                    for ($i = 1; $i <= 3; $i++) {
-                        if ($messages_sent[$i-1] != '1' && get_option('wse_pro_abandoned_cart_enable_msg_' . $i, 'no') === 'yes') {
-                            echo '<a href="?action=force_send&cart_id=' . $cart->id . '&msg=' . $i . '" class="btn" style="font-size: 12px; padding: 5px 10px;">Enviar Msg ' . $i . '</a> ';
-                        }
-                    }
-                }
-                
+                // <<<--- AÑADIR ESTE NUEVO BOTÓN ---<<<
+echo '<a href="?action=reset_cooldown&phone=' . esc_attr($cart->billing_phone ? $cart->billing_phone : $cart->phone) . '&cart_id=' . $cart->id . '" class="btn" style="font-size: 12px; padding: 5px 10px; background-color: #f59e0b;" title="Eliminar historial de envíos para este número">Reset Cooldown</a> ';
+// <<<--- FIN NUEVO BOTÓN ---<<<
+
+// Botón de eliminar (ya existe)
+echo '<a href="?action=delete_cart&cart_id=' . $cart->id . '" class="btn btn-danger" style="font-size: 12px; padding: 5px 10px;" onclick="return confirm(\'¿Eliminar?\')">🗑️</a>';
                 echo '<a href="?action=delete_cart&cart_id=' . $cart->id . '" class="btn btn-danger" style="font-size: 12px; padding: 5px 10px;" onclick="return confirm(\'¿Eliminar?\')">🗑️</a>';
                 echo '</td>';
                 echo '</tr>';
@@ -145,7 +237,6 @@ if (!current_user_can('manage_options')) {
         ?>
     </div>
     
-    <!-- SECCIÓN 3: Cupones Generados -->
     <div class="section">
         <h2>🎁 Cupones Generados (últimos 20)</h2>
         <?php
@@ -173,73 +264,63 @@ if (!current_user_can('manage_options')) {
         ?>
     </div>
     
-    <!-- SECCIÓN 4: Eventos Cron Programados -->
     <div class="section">
-        <h2>⏰ Eventos Cron Programados</h2>
+        <h2>⏰ Eventos Cron Programados (v2.2.2)</h2>
         <?php
-        $cron_events = _get_cron_array();
-        $cart_events = [];
+        $cron_hook = 'wse_pro_process_abandoned_carts';
+        $next_scheduled = wp_next_scheduled($cron_hook);
         
-        foreach ($cron_events as $timestamp => $cron) {
-            foreach ($cron as $hook => $events) {
-                if (strpos($hook, 'wse_pro_send_abandoned_cart_') !== false) {
-                    foreach ($events as $event) {
-                        $cart_events[] = [
-                            'hook' => $hook,
-                            'time' => $timestamp,
-                            'args' => $event['args']
-                        ];
-                    }
-                }
-            }
-        }
-        
-        if (empty($cart_events)) {
-            echo '<div class="info">ℹ️ No hay eventos programados actualmente</div>';
+        if (!$next_scheduled) {
+            echo '<div class="error">⚠️ No se encontró el evento cron principal (<strong>' . $cron_hook . '</strong>) programado.</div>';
+            echo '<p>Esto es un problema. El plugin no puede revisar los carritos automáticamente. Intenta desactivar y reactivar el plugin "WooWApp" para forzar que se vuelva a programar.</p>';
         } else {
-            echo '<table>';
-            echo '<tr><th>Hook</th><th>Carrito ID</th><th>Programado Para</th><th>Tiempo Restante</th></tr>';
+            $time_left = $next_scheduled - time();
+            $time_left_str = '';
             
-            foreach ($cart_events as $event) {
-                $msg_num = str_replace('wse_pro_send_abandoned_cart_', '', $event['hook']);
-                $time_left = $event['time'] - time();
-                $time_left_str = '';
-                
-                if ($time_left > 0) {
-                    $hours = floor($time_left / 3600);
-                    $minutes = floor(($time_left % 3600) / 60);
-                    $time_left_str = $hours . 'h ' . $minutes . 'm';
-                } else {
-                    $time_left_str = '⚠️ Debería haberse ejecutado';
-                }
-                
-                echo '<tr>';
-                echo '<td>Mensaje #' . $msg_num . '</td>';
-                echo '<td>#' . $event['args'][0] . '</td>';
-                echo '<td>' . date('d/m/Y H:i:s', $event['time']) . '</td>';
-                echo '<td>' . $time_left_str . '</td>';
-                echo '</tr>';
+            if ($time_left > 0) {
+                $minutes = floor($time_left / 60);
+                $seconds = $time_left % 60;
+                $time_left_str = 'En ' . $minutes . 'm ' . $seconds . 's';
+            } else {
+                $time_left_str = '⚠️ ¡Atascado! Debería haberse ejecutado hace ' . absint($time_left) . ' segundos.';
             }
+                
+            echo '<table>';
+            echo '<tr><th>Hook Principal</th><th>Próxima Ejecución</th><th>Tiempo Restante</th></tr>';
+            echo '<tr>';
+            echo '<td><strong>' . $cron_hook . '</strong></td>';
+            echo '<td>' . date('d/m/Y H:i:s', $next_scheduled) . '</td>';
+            echo '<td>' . $time_left_str . '</td>';
+            echo '</tr>';
             echo '</table>';
+            
+            if ($time_left <= 0) {
+                 echo '<div class="error">⚠️ <strong>Tu WP-Cron parece estar atascado o no funciona.</strong><br>El evento principal está en el pasado. Esto significa que tu sitio no está ejecutando tareas programadas. Debes configurar un "cron job" en tu hosting (cPanel/Plesk) para que visite <code>' . home_url('/wp-cron.php?doing_wp_cron') . '</code> cada 5 minutos.</div>';
+            }
         }
         ?>
     </div>
     
-    <!-- SECCIÓN 5: Últimos Logs -->
     <div class="section">
-        <h2>📋 Últimos Logs (wse-pro-cart)</h2>
+        <h2>📋 Últimos Logs (wse-pro)</h2>
         <?php
-        $log_file = WC_LOG_DIR . 'wse-pro-cart-' . date('Y-m-d') . '.log';
+        // Nombre de log correcto de la v2.2.2
+        $log_handle = 'wse-pro'; 
+        $log_file = WC_LOG_DIR . $log_handle . '-' . date('Y-m-d') . '.log';
+        
+        if (function_exists('wc_get_log_file_path')) {
+            $log_file = wc_get_log_file_path($log_handle);
+        }
         
         if (file_exists($log_file)) {
             $log_content = file_get_contents($log_file);
             $lines = explode("\n", $log_content);
-            $last_lines = array_slice($lines, -30); // Últimas 30 líneas
+            $last_lines = array_slice($lines, -50); // Últimas 50 líneas
             
             echo '<pre>' . esc_html(implode("\n", $last_lines)) . '</pre>';
             echo '<a href="' . admin_url('admin.php?page=wc-status&tab=logs') . '" class="btn" target="_blank">Ver Todos los Logs</a>';
         } else {
-            echo '<div class="info">ℹ️ No hay logs disponibles para hoy. El archivo se creará cuando ocurra un evento.</div>';
+            echo '<div class="info">ℹ️ No hay logs disponibles para hoy (' . basename($log_file) . '). El archivo se creará cuando ocurra un evento (como enviar un mensaje de prueba o procesar un carrito).</div>';
         }
         ?>
     </div>
