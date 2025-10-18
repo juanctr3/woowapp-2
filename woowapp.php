@@ -1397,7 +1397,36 @@ add_action('wse_pro_send_abandoned_cart_3', [$this, 'debug_force_send_message'],
             $order->add_order_note(__('Fallo al enviar solicitud de reseña: La plantilla de mensaje está vacía.', 'woowapp-smsenlinea-pro'));
         }
     }
+/**
+ * NUEVA FUNCIÓN: Permite que el script test-abandoned-cart.php funcione
+ */
+public function debug_force_send_message($cart_id) {
+    global $wpdb;
 
+    $this->log_info("DEBUG: Forzando envío para carrito #{$cart_id}");
+
+    $cart_row = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM " . self::$abandoned_cart_table_name . " WHERE id = %d",
+        $cart_id
+    ));
+
+    if (!$cart_row) {
+        $this->log_error("DEBUG: Carrito #{$cart_id} no encontrado para forzar envío.");
+        return;
+    }
+
+    // Extraer el número de mensaje del hook actual
+    $current_hook = current_action(); // Ej: 'wse_pro_send_abandoned_cart_1'
+    $message_number = (int) str_replace('wse_pro_send_abandoned_cart_', '', $current_hook);
+
+    if ($message_number < 1 || $message_number > 3) {
+         $this->log_error("DEBUG: Número de mensaje '{$message_number}' no válido.");
+        return;
+    }
+
+    // Llamar a la función de envío real
+    $this->send_abandoned_cart_message($cart_row, $message_number);
+}
     /**
      * ========================================
      * UTILIDADES Y LOGGING
@@ -1770,6 +1799,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
