@@ -467,8 +467,8 @@ final class WooWApp {
         // Carrito abandonado
         if ('yes' === get_option('wse_pro_enable_abandoned_cart', 'no')) {
             add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_scripts']);
-            add_action('wp_ajax_wse_pro_capture_cart', [$this, 'capture_cart_via_ajax']);
-            add_action('wp_ajax_nopriv_wse_pro_capture_cart', [$this, 'capture_cart_via_ajax']);
+            // add_action('wp_ajax_wse_pro_capture_cart', [$this, 'capture_cart_via_ajax']);
+           // add_action('wp_ajax_nopriv_wse_pro_capture_cart', [$this, 'capture_cart_via_ajax']);
             add_action('woocommerce_new_order', [$this, 'cancel_abandoned_cart_reminder'], 10, 1);
             add_action('wse_pro_process_abandoned_carts', [$this, 'process_abandoned_carts_cron']);
             add_action('template_redirect', [$this, 'handle_cart_recovery_link']);
@@ -1766,4 +1766,5 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
