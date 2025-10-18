@@ -809,11 +809,12 @@ add_action('wse_pro_send_abandoned_cart_3', [$this, 'debug_force_send_message'],
         $this->log_info("📝 Mensaje preparado: " . substr($message, 0, 100) . "...");
         
         // 6. Crear objeto para API
-        $cart_obj = (object)[
-            'id' => $cart_row->id,
-            'phone' => $cart_row->phone,
-            'cart_contents' => $cart_row->cart_contents
-        ];
+$cart_obj = (object)[
+    'id' => $cart_row->id,
+    'phone' => $cart_row->phone,
+    'cart_contents' => $cart_row->cart_contents,
+    'billing_country' => $cart_row->billing_country // <-- LÍNEA AÑADIDA
+];
         
         // 7. Enviar mensaje
         $api_handler = new WSE_Pro_API_Handler();
@@ -1799,6 +1800,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
