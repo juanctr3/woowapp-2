@@ -1715,7 +1715,7 @@ function handle_cart_capture() {
     global $wpdb;
     $table = $wpdb->prefix . 'wse_pro_abandoned_carts';
 
-    // Obtener datos del POST (del JS)
+    // Obtener datos del POST
     $phone = sanitize_text_field($_POST['billing_phone'] ?? '');
     $email = sanitize_email($_POST['billing_email'] ?? '');
     $first_name = sanitize_text_field($_POST['billing_first_name'] ?? '');
@@ -1725,84 +1725,97 @@ function handle_cart_capture() {
     $state = sanitize_text_field($_POST['billing_state'] ?? '');
     $postcode = sanitize_text_field($_POST['billing_postcode'] ?? '');
     $country = sanitize_text_field($_POST['billing_country'] ?? '');
-
-    if (empty($phone) && empty($email)) {
-        wp_send_json_error(['message' => 'No phone or email']);
-        return;
-    }
-
-    // Obtener session_id de WooCommerce
+    
+    // Obtener sesión de WooCommerce
     $session_id = WC()->session ? WC()->session->get_customer_id() : '';
 
-    // Buscar si ya existe un carrito active con session_id, phone o email
-    $existing = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM $table 
-         WHERE (session_id = %s OR phone = %s OR billing_email = %s) 
-         AND status = 'active' 
-         ORDER BY id DESC LIMIT 1",
-        $session_id, $phone, $email
-    ));
+    $existing = null;
+    
+    // --- NUEVA LÓGICA DE BÚSQUEDA (CORREGIDA) ---
+    if (!empty($phone) || !empty($email)) {
+        // Caso 1: Tenemos teléfono o email. Buscar por ellos.
+        $query_parts = [];
+        $params = [];
+        
+        if (!empty($phone)) {
+            $query_parts[] = "phone = %s";
+            $params[] = $phone;
+        }
+        if (!empty($email)) {
+            $query_parts[] = "billing_email = %s";
+            $params[] = $email;
+        }
+
+        $existing = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table 
+             WHERE (" . implode(' OR ', $query_parts) . ")
+             AND status = 'active' 
+             ORDER BY id DESC LIMIT 1",
+            $params
+        ));
+    } 
+    
+    if (!$existing) {
+        // Caso 2: No se encontró por phone/email, O están vacíos. Buscar por session_id.
+        // Solo buscar por session_id si NO está vacío (para no agrupar a todos los invitados)
+        if (!empty($session_id)) {
+             $existing = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $table 
+                 WHERE session_id = %s
+                 AND status = 'active' 
+                 ORDER BY id DESC LIMIT 1",
+                $session_id
+            ));
+        }
+    }
+    // --- FIN NUEVA LÓGICA ---
 
     $now = current_time('mysql');
     $cart_contents = serialize(WC()->cart ? WC()->cart->get_cart() : []);
     $cart_total = WC()->cart ? WC()->cart->get_total('edit') : 0;
-    $recovery_token = wp_generate_uuid4(); // O usa tu lógica existente para token
+    
+    // Preparamos el array de datos
+    $cart_data = [
+        'first_name' => $first_name,
+        'phone' => $phone, // <-- Corregido
+        'cart_contents' => $cart_contents,
+        'cart_total' => $cart_total,
+        'billing_first_name' => $first_name,
+        'billing_last_name' => $last_name,
+        'billing_email' => $email,
+        'billing_phone' => $phone, // <-- Corregido
+        'billing_address_1' => $address_1,
+        'billing_city' => $city,
+        'billing_state' => $state,
+        'billing_postcode' => $postcode,
+        'billing_country' => $country,
+        'updated_at' => $now,
+    ];
 
     if ($existing) {
         // Actualizar el existente
         $wpdb->update(
             $table,
-            [
-                'first_name' => $first_name,
-                'billing_first_name' => $first_name,
-                'billing_last_name' => $last_name,
-                'billing_email' => $email,
-                'billing_phone' => $phone,
-                'billing_address_1' => $address_1,
-                'billing_city' => $city,
-                'billing_state' => $state,
-                'billing_postcode' => $postcode,
-                'billing_country' => $country,
-                'cart_contents' => $cart_contents,
-                'cart_total' => $cart_total,
-                'updated_at' => $now,
-            ],
+            $cart_data,
             ['id' => $existing->id]
         );
         wp_send_json_success(['message' => 'Carrito actualizado', 'captured' => true]);
     } else {
         // Insertar nuevo
-        $wpdb->insert(
-            $table,
-            [
-                'session_id' => $session_id,
-                'user_id' => get_current_user_id(),
-                'first_name' => $first_name,
-                'phone' => $phone,
-                'cart_contents' => $cart_contents,
-                'cart_total' => $cart_total,
-                'billing_first_name' => $first_name,
-                'billing_last_name' => $last_name,
-                'billing_email' => $email,
-                'billing_phone' => $phone,
-                'phone' => $phone,
-                'billing_address_1' => $address_1,
-                'billing_city' => $city,
-                'billing_state' => $state,
-                'billing_postcode' => $postcode,
-                'billing_country' => $country,
-                'status' => 'active',
-                'messages_sent' => '0,0,0',
-                'created_at' => $now,
-                'updated_at' => $now,
-                'recovery_token' => $recovery_token,
-            ]
-        );
+        $cart_data['session_id'] = $session_id;
+        $cart_data['user_id'] = get_current_user_id();
+        $cart_data['status'] = 'active';
+        $cart_data['messages_sent'] = '0,0,0';
+        $cart_data['created_at'] = $now;
+        $cart_data['recovery_token'] = wp_generate_uuid4();
+        
+        $wpdb->insert($table, $cart_data);
         wp_send_json_success(['message' => 'Carrito capturado', 'captured' => true]);
     }
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
