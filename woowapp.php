@@ -1671,7 +1671,7 @@ add_action('wp_ajax_wse_pro_capture_cart', 'handle_cart_capture');
 add_action('wp_ajax_nopriv_wse_pro_capture_cart', 'handle_cart_capture');
 
 function handle_cart_capture() {
-    if (!check_ajax_referer('wse_pro_capture', 'nonce', false)) {
+    if (!check_ajax_referer('wse_pro_capture_cart_nonce', 'nonce', false)) {
         wp_send_json_error(['message' => 'Nonce inválido']);
         return;
     }
@@ -1766,5 +1766,6 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
