@@ -1282,7 +1282,7 @@ $result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'custo
         return $this->get_review_form_html();
     }
 
-    private function get_review_form_html() {
+   private function get_review_form_html() {
         // --- INICIO PROCESAMIENTO DEL FORMULARIO ---
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['wse_review_nonce'])) {
             if (!wp_verify_nonce($_POST['wse_review_nonce'], 'wse_submit_review')) {
@@ -1486,81 +1486,6 @@ $result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'custo
             }
         }
         
-        return '<div class="woocommerce-info">' . 
-               __('Para dejar una reseña, por favor usa el enlace proporcionado en el mensaje.', 'woowapp-smsenlinea-pro') . 
-               '</div>';
-        // --- FIN MOSTRAR EL FORMULARIO ---
-    }
-                
-       // --- INICIO MOSTRAR EL FORMULARIO ---
-        $order_id = isset($_GET['order_id']) ? absint($_GET['order_id']) : 0;
-        $order_key = isset($_GET['key']) ? sanitize_text_field($_GET['key']) : '';
-        
-        if ($order_id > 0 && !empty($order_key)) {
-            $order = wc_get_order($order_id);
-            
-            // Verificar que el pedido exista y la clave sea correcta
-            if ($order && $order->key_is_valid($order_key)) {
-                $html = '<div class="woowapp-review-container">';
-                $html .= '<h3>' . sprintf(
-                    __('Deja una reseña para los productos de tu pedido #%s', 'woowapp-smsenlinea-pro'),
-                    $order->get_order_number()
-                ) . '</h3>';
-                
-                // Iterar sobre los items del pedido para mostrar un formulario por producto
-                foreach ($order->get_items() as $item_id => $item) {
-                    $product = $item->get_product();
-                    if (!$product) continue;
-
-                    // El ID para la reseña debe ser el del producto principal, no la variación
-                    $product_id_for_review = $product->is_type('variation') ? $product->get_parent_id() : $product->get_id();
-
-                    $html .= '<div class="review-form-wrapper" style="border:1px solid #ddd; padding:20px; margin-bottom:20px; border-radius: 5px;">';
-                    $html .= '<h4>' . esc_html($product->get_name()) . '</h4>';
-                    $html .= '<form method="post" class="woowapp-review-form">';
-                    
-                    // Campo de calificación (estrellas)
-                    $html .= '<p class="comment-form-rating">';
-                    $html .= '<label for="review_rating-' . esc_attr($item_id) . '">' . __('Tu calificación', 'woowapp-smsenlinea-pro') . '&nbsp;<span class="required">*</span></label>';
-                    $html .= '<select name="review_rating" id="review_rating-' . esc_attr($item_id) . '" required style="width: auto;">';
-                    $html .= '<option value="5" selected>' . __('Perfecto', 'woowapp-smsenlinea-pro') . '</option>';
-                    $html .= '<option value="4">' . __('Bueno', 'woowapp-smsenlinea-pro') . '</option>';
-                    $html .= '<option value="3">' . __('Promedio', 'woowapp-smsenlinea-pro') . '</option>';
-                    $html .= '<option value="2">' . __('No tan bueno', 'woowapp-smsenlinea-pro') . '</option>';
-                    $html .= '<option value="1">' . __('Muy pobre', 'woowapp-smsenlinea-pro') . '</option>';
-                    $html .= '</select></p>';
-                    
-                    // Campo de comentario
-                    $html .= '<p class="comment-form-comment">';
-                    $html .= '<label for="review_comment-' . esc_attr($item_id) . '">' . __('Tu reseña', 'woowapp-smsenlinea-pro') . '</label>';
-                    $html .= '<textarea name="review_comment" id="review_comment-' . esc_attr($item_id) . '" cols="45" rows="8" style="width:100%;"></textarea>';
-                    $html .= '</p>';
-                    
-                    // Campos ocultos necesarios para el procesamiento
-                    $html .= '<input type="hidden" name="review_order_id" value="' . esc_attr($order_id) . '" />';
-                    // Pasamos el ID del producto principal para la reseña
-                    $html .= '<input type="hidden" name="review_product_id" value="' . esc_attr($product_id_for_review) . '" />'; 
-                    $html .= wp_nonce_field('wse_submit_review', 'wse_review_nonce', true, false);
-                    
-                    // Botón de envío
-                    $html .= '<p class="form-submit">';
-                    $html .= '<input name="submit" type="submit" class="submit button" value="' . __('Enviar Reseña', 'woowapp-smsenlinea-pro') . '" />';
-                    $html .= '</p>';
-                    $html .= '</form>';
-                    $html .= '</div>';
-                }
-                
-                $html .= '</div>'; // Fin woowapp-review-container
-                return $html;
-            } else {
-                 // Si la clave del pedido no es válida
-                return '<div class="woocommerce-error">' . 
-                       __('El enlace de reseña no es válido o ha caducado.', 'woowapp-smsenlinea-pro') . 
-                       '</div>';
-            }
-        }
-        
-        // Si no se proporcionan order_id y key en la URL
         return '<div class="woocommerce-info">' . 
                __('Para dejar una reseña, por favor usa el enlace proporcionado en el mensaje.', 'woowapp-smsenlinea-pro') . 
                '</div>';
@@ -2007,8 +1932,6 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
-
-
 
 
 
