@@ -745,145 +745,22 @@ final class WooWApp {
      * 🔧 ENVIAR MENSAJE - VERSIÓN COMPLETAMENTE REESCRITA v2.2.2
      */
     private function send_abandoned_cart_message($cart_row, $message_number) {
-    global $wpdb;
-    
-    try {
+        global $wpdb;
+        
         $this->log_info("📤 Iniciando envío mensaje #{$message_number} para carrito #{$cart_row->id}");
         
-        // 1. Obtener carrito ACTUALIZADO de BD (no del cache)
-        $current_cart = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM " . self::$abandoned_cart_table_name . " WHERE id = %d",
-            $cart_row->id
-        ));
-        
-        if (!$current_cart) {
-            $this->log_warning("Carrito no encontrado: {$cart_row->id}");
+        // 1. Validar estado del carrito
+        if ($cart_row->status !== 'active') {
+            $this->log_warning("⚠️ Carrito #{$cart_row->id} no está activo (status: {$cart_row->status})");
             return false;
         }
         
-        // 2. Validar estado del carrito
-        if ($current_cart->status !== 'active') {
-            $this->log_warning("⚠️ Carrito #{$current_cart->id} no está activo (status: {$current_cart->status})");
+        // 2. Verificar que el mensaje no se haya enviado
+        $messages_sent = explode(',', $cart_row->messages_sent);
+        if (isset($messages_sent[$message_number - 1]) && $messages_sent[$message_number - 1] == '1') {
+            $this->log_info("⚠️ Mensaje #{$message_number} ya enviado anteriormente");
             return false;
         }
-        
-        // 3. Verificar que el mensaje NO se haya enviado (VERIFICACIÓN TRIPLE)
-        $messages_sent = explode(',', $current_cart->messages_sent);
-        
-        if (isset($messages_sent[$message_number - 1])) {
-            if ($messages_sent[$message_number - 1] == '1') {
-                $this->log_warning("⚠️ Mensaje #{$message_number} YA fue enviado - Saltando");
-                return false;
-            }
-        }
-        
-        // 4. Obtener plantilla
-        $template = get_option('wse_pro_abandoned_cart_message_' . $message_number);
-        if (empty($template)) {
-            $this->log_error("❌ Plantilla mensaje #{$message_number} vacía");
-            return false;
-        }
-        
-        // 5. Generar cupón si está habilitado
-        $coupon_data = null;
-        $coupon_enabled = get_option("wse_pro_abandoned_cart_coupon_enable_{$message_number}", 'no');
-        
-        if ($coupon_enabled === 'yes') {
-            $coupon_manager = WSE_Pro_Coupon_Manager::get_instance();
-            
-            $prefix = get_option(
-                "wse_pro_abandoned_cart_coupon_prefix_{$message_number}",
-                'woowapp-m' . $message_number
-            );
-            
-            $coupon_result = $coupon_manager->generate_coupon([
-                'discount_type'   => get_option("wse_pro_abandoned_cart_coupon_type_{$message_number}", 'percent'),
-                'discount_amount' => (float) get_option("wse_pro_abandoned_cart_coupon_amount_{$message_number}", 10),
-                'expiry_days'     => (int) get_option("wse_pro_abandoned_cart_coupon_expiry_{$message_number}", 7),
-                'customer_phone'  => $current_cart->phone,
-                'customer_email'  => $current_cart->billing_email,
-                'cart_id'         => $current_cart->id,
-                'message_number'  => $message_number,
-                'coupon_type'     => 'cart_recovery',
-                'prefix'          => $prefix
-            ]);
-            
-            if (!is_wp_error($coupon_result)) {
-                $coupon_data = $coupon_result;
-                $this->log_info("🎁 Cupón generado: {$coupon_result['code']}");
-            }
-        }
-        
-        // 6. Reemplazar placeholders
-        $message = WSE_Pro_Placeholders::replace_for_cart($template, $current_cart, $coupon_data);
-        
-        $this->log_info("📝 Mensaje preparado: " . substr($message, 0, 100) . "...");
-        
-        // 7. MARCAR COMO ENVIANDO ANTES de enviar (para evitar duplicados)
-        $messages_sent[$message_number - 1] = '1';
-        $new_messages_sent = implode(',', $messages_sent);
-        
-        $update_result = $wpdb->update(
-            self::$abandoned_cart_table_name,
-            ['messages_sent' => $new_messages_sent],
-            ['id' => $current_cart->id],
-            ['%s'],
-            ['%d']
-        );
-        
-        if ($update_result === false) {
-            $this->log_error("❌ Error al marcar mensaje como enviado: " . $wpdb->last_error);
-            return false;
-        }
-        
-        $this->log_info("✅ Mensaje #{$message_number} marcado como enviado en BD");
-        
-        // 8. Crear objeto para API
-        $cart_obj = (object)[
-            'id' => $current_cart->id,
-            'phone' => $current_cart->phone,
-            'cart_contents' => $current_cart->cart_contents
-        ];
-        
-        // 9. Enviar mensaje
-        $api_handler = new WSE_Pro_API_Handler();
-        $result = $api_handler->send_message($current_cart->phone, $message, $cart_obj, 'customer');
-        
-        // 10. Procesar resultado
-        if ($result['success']) {
-            $this->log_info("✅ Mensaje #{$message_number} ENVIADO a {$current_cart->phone}");
-            
-            // Registrar en tracking
-            $this->track_event($current_cart->id, $message_number, 'sent', [
-                'phone' => $current_cart->phone,
-                'coupon' => $coupon_data ? $coupon_data['code'] : '',
-                'message_text' => substr($message, 0, 100)
-            ]);
-            
-            return true;
-        } else {
-            $error = isset($result['message']) ? $result['message'] : 'Error desconocido';
-            $this->log_error("❌ ERROR al enviar mensaje: {$error}");
-            
-            // 🔧 REVERTIR: Si no se envía, marcar como NO enviado
-            $messages_sent[$message_number - 1] = '0';
-            $wpdb->update(
-                self::$abandoned_cart_table_name,
-                ['messages_sent' => implode(',', $messages_sent)],
-                ['id' => $current_cart->id],
-                ['%s'],
-                ['%d']
-            );
-            
-            $this->log_warning("⚠️ Mensaje revertido a no enviado por error en API");
-            return false;
-        }
-        
-    } catch (Exception $e) {
-        $this->log_error('Excepción en send_abandoned_cart_message: ' . $e->getMessage());
-        return false;
-    }
-}
         
         // 3. Obtener plantilla
         $template = get_option('wse_pro_abandoned_cart_message_' . $message_number);
@@ -1073,60 +950,31 @@ final class WooWApp {
             $this->log_info("Recuperación - ID: {$cart_row->id}, Restaurados: {$products_restored}, Fallidos: {$products_failed}");
 
             // Restaurar datos del cliente en WC_Customer
-$customer = WC()->customer;
-if ($customer) {
-    $this->log_info("Restaurando datos del cliente...");
-    
-    // Billing - NOMBRE Y APELLIDO PRIMERO
-    if (!empty($cart_row->billing_first_name)) {
-        $customer->set_billing_first_name($cart_row->billing_first_name);
-        $this->log_info("Nombre restaurado: {$cart_row->billing_first_name}");
-    }
-    
-    if (!empty($cart_row->billing_last_name)) {
-        $customer->set_billing_last_name($cart_row->billing_last_name);
-        $this->log_info("Apellido restaurado: {$cart_row->billing_last_name}");
-    }
-    
-    if (!empty($cart_row->billing_email)) {
-        $customer->set_billing_email($cart_row->billing_email);
-        $this->log_info("Email restaurado: {$cart_row->billing_email}");
-    }
-    
-    if (!empty($cart_row->billing_phone)) {
-        $customer->set_billing_phone($cart_row->billing_phone);
-        $this->log_info("Teléfono restaurado: {$cart_row->billing_phone}");
-    }
-    
-    if (!empty($cart_row->billing_address_1)) {
-        $customer->set_billing_address_1($cart_row->billing_address_1);
-        $this->log_info("Dirección restaurada: {$cart_row->billing_address_1}");
-    }
-    
-    if (!empty($cart_row->billing_city)) {
-        $customer->set_billing_city($cart_row->billing_city);
-        $this->log_info("Ciudad restaurada: {$cart_row->billing_city}");
-    }
-    
-    // País PRIMERO, luego estado
-    if (!empty($cart_row->billing_country)) {
-        $customer->set_billing_country($cart_row->billing_country);
-        $this->log_info("País restaurado: {$cart_row->billing_country}");
-    }
-    
-    if (!empty($cart_row->billing_state)) {
-        $customer->set_billing_state($cart_row->billing_state);
-        $this->log_info("Estado restaurado: {$cart_row->billing_state}");
-    }
-    
-    if (!empty($cart_row->billing_postcode)) {
-        $customer->set_billing_postcode($cart_row->billing_postcode);
-        $this->log_info("Código postal restaurado: {$cart_row->billing_postcode}");
-    }
-    
-    // Guardar todo
-    $customer->save();
-    $this->log_info("✅ Datos del cliente guardados");
+            $customer = WC()->customer;
+            if ($customer) {
+                // Billing
+                if (!empty($cart_row->billing_first_name)) $customer->set_billing_first_name($cart_row->billing_first_name);
+                if (!empty($cart_row->billing_last_name)) $customer->set_billing_last_name($cart_row->billing_last_name);
+                if (!empty($cart_row->billing_email)) $customer->set_billing_email($cart_row->billing_email);
+                if (!empty($cart_row->billing_phone)) $customer->set_billing_phone($cart_row->billing_phone);
+                if (!empty($cart_row->billing_address_1)) $customer->set_billing_address_1($cart_row->billing_address_1);
+                if (!empty($cart_row->billing_city)) $customer->set_billing_city($cart_row->billing_city);
+                
+                // País PRIMERO, luego estado
+                if (!empty($cart_row->billing_country)) {
+                    $customer->set_billing_country($cart_row->billing_country);
+                    $this->log_info("País restaurado: {$cart_row->billing_country}");
+                }
+                
+                if (!empty($cart_row->billing_state)) {
+                    $customer->set_billing_state($cart_row->billing_state);
+                    $this->log_info("Estado restaurado: {$cart_row->billing_state}");
+                }
+                
+                if (!empty($cart_row->billing_postcode)) $customer->set_billing_postcode($cart_row->billing_postcode);
+                
+                // Guardar todo
+                $customer->save();
                 
                 // Guardar también en sesión de WooCommerce
                 if (WC()->session) {
@@ -1818,106 +1666,6 @@ if ($customer) {
         }
     }
 }
-// Nueva función para manejar la captura de carrito sin duplicados
-add_action('wp_ajax_wse_pro_capture_cart', 'handle_cart_capture');
-add_action('wp_ajax_nopriv_wse_pro_capture_cart', 'handle_cart_capture');
 
-function handle_cart_capture() {
-    if (!check_ajax_referer('wse_pro_capture', 'nonce', false)) {
-        wp_send_json_error(['message' => 'Nonce inválido']);
-        return;
-    }
-
-    global $wpdb;
-    $table = $wpdb->prefix . 'wse_pro_abandoned_carts';
-
-    // Obtener datos del POST (del JS)
-    $phone = sanitize_text_field($_POST['billing_phone'] ?? '');
-    $email = sanitize_email($_POST['billing_email'] ?? '');
-    $first_name = sanitize_text_field($_POST['billing_first_name'] ?? '');
-    $last_name = sanitize_text_field($_POST['billing_last_name'] ?? '');
-    $address_1 = sanitize_text_field($_POST['billing_address_1'] ?? '');
-    $city = sanitize_text_field($_POST['billing_city'] ?? '');
-    $state = sanitize_text_field($_POST['billing_state'] ?? '');
-    $postcode = sanitize_text_field($_POST['billing_postcode'] ?? '');
-    $country = sanitize_text_field($_POST['billing_country'] ?? '');
-
-    if (empty($phone) && empty($email)) {
-        wp_send_json_error(['message' => 'No phone or email']);
-        return;
-    }
-
-    // Obtener session_id de WooCommerce
-    $session_id = WC()->session ? WC()->session->get_customer_id() : '';
-
-    // Buscar si ya existe un carrito active con session_id, phone o email
-    $existing = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM $table 
-         WHERE (session_id = %s OR phone = %s OR billing_email = %s) 
-         AND status = 'active' 
-         ORDER BY id DESC LIMIT 1",
-        $session_id, $phone, $email
-    ));
-
-    $now = current_time('mysql');
-    $cart_contents = serialize(WC()->cart ? WC()->cart->get_cart() : []);
-    $cart_total = WC()->cart ? WC()->cart->get_total('edit') : 0;
-    $recovery_token = wp_generate_uuid4(); // O usa tu lógica existente para token
-
-    if ($existing) {
-        // Actualizar el existente
-        $wpdb->update(
-            $table,
-            [
-                'first_name' => $first_name,
-                'billing_first_name' => $first_name,
-                'billing_last_name' => $last_name,
-                'billing_email' => $email,
-                'billing_phone' => $phone,
-                'billing_address_1' => $address_1,
-                'billing_city' => $city,
-                'billing_state' => $state,
-                'billing_postcode' => $postcode,
-                'billing_country' => $country,
-                'cart_contents' => $cart_contents,
-                'cart_total' => $cart_total,
-                'updated_at' => $now,
-            ],
-            ['id' => $existing->id]
-        );
-        wp_send_json_success(['message' => 'Carrito actualizado', 'captured' => true]);
-    } else {
-        // Insertar nuevo
-        $wpdb->insert(
-            $table,
-            [
-                'session_id' => $session_id,
-                'user_id' => get_current_user_id(),
-                'first_name' => $first_name,
-                'phone' => $phone,
-                'cart_contents' => $cart_contents,
-                'cart_total' => $cart_total,
-                'billing_first_name' => $first_name,
-                'billing_last_name' => $last_name,
-                'billing_email' => $email,
-                'billing_phone' => $phone,
-                'billing_address_1' => $address_1,
-                'billing_city' => $city,
-                'billing_state' => $state,
-                'billing_postcode' => $postcode,
-                'billing_country' => $country,
-                'status' => 'active',
-                'messages_sent' => '0,0,0',
-                'created_at' => $now,
-                'updated_at' => $now,
-                'recovery_token' => $recovery_token,
-            ]
-        );
-        wp_send_json_success(['message' => 'Carrito capturado', 'captured' => true]);
-    }
-}
 // Inicializar el plugin
 WooWApp::get_instance();
-
-
-
