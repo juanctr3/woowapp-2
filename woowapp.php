@@ -490,6 +490,10 @@ final class WooWApp {
         add_filter('the_content', [$this, 'handle_custom_review_page_content']);
         add_filter('woocommerce_order_actions', [$this, 'add_manual_review_request_action']);
         add_action('woocommerce_order_action_wse_send_review_request', [$this, 'process_manual_review_request_action']);
+        // AÑADIR ESTO: Hooks para el botón "Forzar Envío" del script de debug
+add_action('wse_pro_send_abandoned_cart_1', [$this, 'debug_force_send_message'], 10, 1);
+add_action('wse_pro_send_abandoned_cart_2', [$this, 'debug_force_send_message'], 10, 1);
+add_action('wse_pro_send_abandoned_cart_3', [$this, 'debug_force_send_message'], 10, 1);
     }
 
     /**
@@ -1766,6 +1770,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
