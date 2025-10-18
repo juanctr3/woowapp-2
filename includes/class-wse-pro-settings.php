@@ -567,68 +567,7 @@ class WSE_Pro_Settings {
             ['type' => 'sectionend', 'id' => 'wse_pro_review_reward_end'],
             // === FIN NUEVA SECCIÓN ===
 
-            // Recompensa por Reseña
-[
-    'name' => __('🎁 Recompensa por Reseña', 'woowapp-smsenlinea-pro'),
-    'type' => 'title',
-    'id' => 'wse_pro_review_reward_title',
-    'desc' => __('Envía un mensaje de agradecimiento y un cupón de descuento después de que un cliente deje una reseña.', 'woowapp-smsenlinea-pro')
-],
-[
-    'name' => __('Activar agradecimiento por reseña', 'woowapp-smsenlinea-pro'),
-    'type' => 'checkbox',
-    'id' => 'wse_pro_enable_review_reward',
-    'desc' => __('<strong>Activar mensaje de agradecimiento.</strong>', 'woowapp-smsenlinea-pro'),
-    'default' => 'no'
-],
-[
-    'name' => __('Plantilla del mensaje de agradecimiento', 'woowapp-smsenlinea-pro'),
-    'type' => 'textarea_with_pickers',
-    'id' => 'wse_pro_review_reward_message',
-    'css' => 'width:100%; height:90px;',
-    'default' => __('¡Muchas gracias por tu reseña, {customer_name}! ✨ Como agradecimiento, aquí tienes un cupón de {coupon_amount} para tu próxima compra: {coupon_code}. ¡Válido hasta {coupon_expires}!', 'woowapp-smsenlinea-pro')
-],
-[
-    'name' => __('Activar cupón de recompensa', 'woowapp-smsenlinea-pro'),
-    'type' => 'checkbox',
-    'id' => 'wse_pro_review_reward_coupon_enable',
-    'desc' => __('<strong>Generar y enviar un cupón de descuento.</strong>', 'woowapp-smsenlinea-pro'),
-    'default' => 'no'
-],
-[
-    'name'    => __( 'Tipo de Descuento', 'woowapp-smsenlinea-pro' ),
-    'id'      => 'wse_pro_review_reward_coupon_type',
-    'type'    => 'select',
-    'options' => [
-        'percent'    => __( 'Porcentaje (%)', 'woowapp-smsenlinea-pro' ),
-        'fixed_cart' => __( 'Monto Fijo', 'woowapp-smsenlinea-pro' ),
-    ],
-    'default' => 'percent',
-],
-[
-    'name'        => __( 'Cantidad del Descuento', 'woowapp-smsenlinea-pro' ),
-    'id'          => 'wse_pro_review_reward_coupon_amount',
-    'type'        => 'number',
-    'default'     => '15',
-    'custom_attributes' => ['min' => '1', 'step' => '0.01'],
-],
-[
-    'name'        => __( 'Válido por (días)', 'woowapp-smsenlinea-pro' ),
-    'id'          => 'wse_pro_review_reward_coupon_expiry',
-    'type'        => 'number',
-    'default'     => '14',
-    'custom_attributes' => ['min' => '1'],
-],
-[
-    'name'        => __( 'Prefijo del Cupón', 'woowapp-smsenlinea-pro' ),
-    'id'          => 'wse_pro_review_reward_coupon_prefix',
-    'type'        => 'text',
-    'default'     => 'RESEÑA',
-    'desc'        => __('Base para el código del cupón, ej: GRACIAS', 'woowapp-smsenlinea-pro'),
-    'desc_tip'    => true,
-],
-['type' => 'sectionend', 'id' => 'wse_pro_review_reward_end'],
-            // Recuperación de Carrito Abandonado
+        // Recuperación de Carrito Abandonado
             [
                 'name' => __('🛒 Recuperación de Carrito Abandonado', 'woowapp-smsenlinea-pro'),
                 'type' => 'title',
@@ -1029,5 +968,6 @@ class WSE_Pro_Settings {
         ]);
     }
 }
+
 
 
