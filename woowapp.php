@@ -1818,8 +1818,106 @@ if ($customer) {
         }
     }
 }
+// Nueva función para manejar la captura de carrito sin duplicados
+add_action('wp_ajax_wse_pro_capture_cart', 'handle_cart_capture');
+add_action('wp_ajax_nopriv_wse_pro_capture_cart', 'handle_cart_capture');
 
+function handle_cart_capture() {
+    if (!check_ajax_referer('wse_pro_capture', 'nonce', false)) {
+        wp_send_json_error(['message' => 'Nonce inválido']);
+        return;
+    }
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'wse_pro_abandoned_carts';
+
+    // Obtener datos del POST (del JS)
+    $phone = sanitize_text_field($_POST['billing_phone'] ?? '');
+    $email = sanitize_email($_POST['billing_email'] ?? '');
+    $first_name = sanitize_text_field($_POST['billing_first_name'] ?? '');
+    $last_name = sanitize_text_field($_POST['billing_last_name'] ?? '');
+    $address_1 = sanitize_text_field($_POST['billing_address_1'] ?? '');
+    $city = sanitize_text_field($_POST['billing_city'] ?? '');
+    $state = sanitize_text_field($_POST['billing_state'] ?? '');
+    $postcode = sanitize_text_field($_POST['billing_postcode'] ?? '');
+    $country = sanitize_text_field($_POST['billing_country'] ?? '');
+
+    if (empty($phone) && empty($email)) {
+        wp_send_json_error(['message' => 'No phone or email']);
+        return;
+    }
+
+    // Obtener session_id de WooCommerce
+    $session_id = WC()->session ? WC()->session->get_customer_id() : '';
+
+    // Buscar si ya existe un carrito active con session_id, phone o email
+    $existing = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table 
+         WHERE (session_id = %s OR phone = %s OR billing_email = %s) 
+         AND status = 'active' 
+         ORDER BY id DESC LIMIT 1",
+        $session_id, $phone, $email
+    ));
+
+    $now = current_time('mysql');
+    $cart_contents = serialize(WC()->cart ? WC()->cart->get_cart() : []);
+    $cart_total = WC()->cart ? WC()->cart->get_total('edit') : 0;
+    $recovery_token = wp_generate_uuid4(); // O usa tu lógica existente para token
+
+    if ($existing) {
+        // Actualizar el existente
+        $wpdb->update(
+            $table,
+            [
+                'first_name' => $first_name,
+                'billing_first_name' => $first_name,
+                'billing_last_name' => $last_name,
+                'billing_email' => $email,
+                'billing_phone' => $phone,
+                'billing_address_1' => $address_1,
+                'billing_city' => $city,
+                'billing_state' => $state,
+                'billing_postcode' => $postcode,
+                'billing_country' => $country,
+                'cart_contents' => $cart_contents,
+                'cart_total' => $cart_total,
+                'updated_at' => $now,
+            ],
+            ['id' => $existing->id]
+        );
+        wp_send_json_success(['message' => 'Carrito actualizado', 'captured' => true]);
+    } else {
+        // Insertar nuevo
+        $wpdb->insert(
+            $table,
+            [
+                'session_id' => $session_id,
+                'user_id' => get_current_user_id(),
+                'first_name' => $first_name,
+                'phone' => $phone,
+                'cart_contents' => $cart_contents,
+                'cart_total' => $cart_total,
+                'billing_first_name' => $first_name,
+                'billing_last_name' => $last_name,
+                'billing_email' => $email,
+                'billing_phone' => $phone,
+                'billing_address_1' => $address_1,
+                'billing_city' => $city,
+                'billing_state' => $state,
+                'billing_postcode' => $postcode,
+                'billing_country' => $country,
+                'status' => 'active',
+                'messages_sent' => '0,0,0',
+                'created_at' => $now,
+                'updated_at' => $now,
+                'recovery_token' => $recovery_token,
+            ]
+        );
+        wp_send_json_success(['message' => 'Carrito capturado', 'captured' => true]);
+    }
+}
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
