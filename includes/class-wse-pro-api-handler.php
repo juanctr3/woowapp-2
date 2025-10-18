@@ -4,6 +4,7 @@
  *
  * @package WooWApp
  * @version 1.1
+ * @MODIFIED: v2.2.2 - Lógica de detección de país mejorada para carritos abandonados.
  */
 
 if (!defined('ABSPATH')) {
@@ -123,16 +124,19 @@ class WSE_Pro_API_Handler {
     public function send_message($phone, $message, $data_source = null, $type = 'customer') {
         $selected_panel = get_option('wse_pro_api_panel_selection', 'panel2');
         
+        // === INICIO DE LA CORRECCIÓN PARA PAÍS DINÁMICO ===
         $country = '';
-if ($data_source && 'customer' === $type) {
-    if (is_a($data_source, 'WC_Order')) {
-        // Es un Pedido
-        $country = $data_source->get_billing_country();
-    } elseif (is_object($data_source) && isset($data_source->billing_country)) {
-        // Es un Carrito Abandonado (nuestro objeto $cart_obj)
-        $country = $data_source->billing_country;
-    }
-}
+        if ($data_source && 'customer' === $type) {
+            if (is_a($data_source, 'WC_Order')) {
+                // Es un Pedido
+                $country = $data_source->get_billing_country();
+            } elseif (is_object($data_source) && isset($data_source->billing_country)) {
+                // Es un Carrito Abandonado (nuestro objeto $cart_obj)
+                $country = $data_source->billing_country;
+            }
+        }
+        // === FIN DE LA CORRECCIÓN ===
+        
         $full_phone = $this->format_phone($phone, $country);
         
         if (empty($full_phone) || empty($message)) {
@@ -403,4 +407,3 @@ if ($data_source && 'customer' === $type) {
         wp_send_json_success($result);
     }
 }
-
