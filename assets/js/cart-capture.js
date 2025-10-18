@@ -28,6 +28,7 @@ jQuery(document).ready(function($) {
     }
 
     let isProcessing = false;
+    let previousData = null; // Nuevo: Caché para datos previos
 
     // ==========================================
     // 📊 SELECTORES DE CAMPOS - CONFIGURACIÓN BASE
@@ -429,6 +430,18 @@ jQuery(document).ready(function($) {
             return;
         }
 
+        // Nuevo: Comparar con datos previos para evitar envíos duplicados
+        const currentDataJson = JSON.stringify(data);
+        if (previousData && currentDataJson === previousData) {
+            if (SERVER_CONFIG.debug) {
+                console.log('⏭️  Datos iguales a los previos - No enviar');
+            }
+            return;
+        }
+
+        // Actualizar caché
+        previousData = currentDataJson;
+
         // Añadir nonce si existe
         if (SERVER_CONFIG.nonce) {
             data.nonce = SERVER_CONFIG.nonce;
@@ -474,9 +487,9 @@ jQuery(document).ready(function($) {
                             console.log(`👁️  Campo cambió: ${fieldName}`);
                         }
                         
-                        // Debounce: Esperar 2 segundos antes de capturar
+                        // Debounce: Esperar 3 segundos antes de capturar (aumentado para menos envíos)
                         clearTimeout(window.captureDebounceTimer);
-                        window.captureDebounceTimer = setTimeout(captureAndSend, 2000);
+                        window.captureDebounceTimer = setTimeout(captureAndSend, 3000);
                     });
 
                     listenersAttached++;
@@ -554,13 +567,13 @@ jQuery(document).ready(function($) {
             captureAndSend();
         }, 3000);
 
-        // Captura periódica cada 30 segundos (por si hay cambios)
+        // Captura periódica cada 60 segundos (aumentado para menos envíos)
         setInterval(() => {
             if (SERVER_CONFIG.debug) {
                 console.log('%c⏰ Captura periódica', 'color: #f59e0b');
             }
             captureAndSend();
-        }, 30000);
+        }, 60000);
 
         if (SERVER_CONFIG.debug) {
             console.log('%c🎉 WooWApp inicializado correctamente', 'color: #10b981; font-weight: bold; font-size: 14px');
