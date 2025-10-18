@@ -1,307 +1,259 @@
 <?php
 /**
- * Script de Diagnóstico y Migración - WooWApp
- * 
- * Coloca este archivo en la raíz de WordPress y accede vía:
- * https://tudominio.com/woowapp-migration-check.php
- * 
- * IMPORTANTE: Elimina este archivo después de usarlo por seguridad
+ * Script de Debug para Carritos Abandonados (v2.2.2+)
+ * * IMPORTANTE: Sube este archivo a la raíz de WordPress y accede vía navegador
+ * URL: https://tu-sitio.com/test-abandoned-cart.php
+ * * Después de usarlo, ELIMÍNALO por seguridad.
+ * * ACTUALIZADO: 
+ * - Añadido botón para forzar el cron principal (wse_pro_process_abandoned_carts).
+ * - Eliminados botones obsoletos (force_send).
+ * - Corregida la visualización de eventos cron para buscar el cron principal.
+ * - Corregida la ruta del archivo de log.
  */
 
 // Cargar WordPress
 require_once('wp-load.php');
 
-// Verificar que el usuario sea administrador
+// Solo permitir a administradores
 if (!current_user_can('manage_options')) {
-    die('Acceso denegado. Debes ser administrador.');
+    die('Acceso denegado');
 }
-
-global $wpdb;
-$table_name = $wpdb->prefix . 'wse_pro_abandoned_carts';
 
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WooWApp - Diagnóstico y Migración</title>
+    <title>Debug - Carritos Abandonados (v2.2.2)</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 3px solid #25D366;
-            padding-bottom: 10px;
-        }
-        h2 {
-            color: #34495e;
-            margin-top: 30px;
-        }
-        .status {
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-        }
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .status.warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background: #34495e;
-            color: white;
-        }
-        tr:hover {
-            background: #f5f5f5;
-        }
-        .button {
-            background: #25D366;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            text-decoration: none;
-            display: inline-block;
-            margin: 10px 5px 10px 0;
-        }
-        .button:hover {
-            background: #128C7E;
-        }
-        .button.danger {
-            background: #e74c3c;
-        }
-        .button.danger:hover {
-            background: #c0392b;
-        }
-        code {
-            background: #f4f4f4;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-        }
-        pre {
-            background: #2c3e50;
-            color: #ecf0f1;
-            padding: 15px;
-            border-radius: 5px;
-            overflow-x: auto;
-        }
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 20px auto; padding: 20px; }
+        .section { background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 8px; }
+        .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #007cba; color: white; }
+        .btn { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; margin: 5px; }
+        .btn:hover { background: #005a87; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #a71d2a; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+        pre { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; overflow-x: auto; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔧 WooWApp - Diagnóstico y Migración</h1>
+    <h1>🛒 Debug - Sistema de Carritos Abandonados (v2.2.2)</h1>
+    
+    <?php
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'wse_pro_abandoned_carts';
+    $coupons_table = $wpdb->prefix . 'wse_pro_coupons_generated';
+    $tracking_table = $wpdb->prefix . 'wse_pro_tracking'; // Tabla de tracking
+    
+    // Acción: Forzar el Cron Principal (el método correcto para v2.2.2+)
+    if (isset($_GET['action']) && $_GET['action'] === 'force_cron') {
+        echo '<div class="section">';
+        echo '<h2>🚀 Ejecutando Procesador Principal de Carritos...</h2>';
         
-        <?php
-        // 1. VERIFICAR EXISTENCIA DE LA TABLA
-        echo "<h2>1️⃣ Verificación de Tabla</h2>";
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
-        
-        if ($table_exists) {
-            echo '<div class="status success">✅ La tabla <code>' . $table_name . '</code> existe</div>';
+        if (class_exists('WooWApp')) {
+            $woowapp_instance = WooWApp::get_instance();
+            
+            if (method_exists($woowapp_instance, 'process_abandoned_carts_cron')) {
+                // Ejecutar la función de procesamiento
+                $woowapp_instance->process_abandoned_carts_cron();
+                echo '<div class="success">✅ Tarea de procesamiento ejecutada. Verifica los logs y si recibiste el mensaje.</div>';
+            } else {
+                echo '<div class="error">❌ ERROR: El método "process_abandoned_carts_cron" no existe en la clase "WooWApp".</div>';
+            }
         } else {
-            echo '<div class="status error">❌ La tabla <code>' . $table_name . '</code> NO existe</div>';
-            echo '<p>Activa y desactiva el plugin WooWApp para crear la tabla automáticamente.</p>';
-            exit;
+            echo '<div class="error">❌ ERROR: La clase "WooWApp" no existe. El plugin no parece estar activo.</div>';
         }
         
-        // 2. VERIFICAR COLUMNAS
-        echo "<h2>2️⃣ Verificación de Columnas</h2>";
-        $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_name");
+        echo '<a href="?refresh=1" class="btn">↻ Recargar Página</a>';
+        echo '</div>';
+    }
+    
+    // Acción: Limpiar carrito
+    if (isset($_GET['action']) && $_GET['action'] === 'delete_cart' && isset($_GET['cart_id'])) {
+        $cart_id = intval($_GET['cart_id']);
+        $wpdb->delete($table_name, ['id' => $cart_id]);
+        $wpdb->delete($tracking_table, ['cart_id' => $cart_id]); // Borrar también tracking
+        echo '<div class="success">✅ Carrito #' . $cart_id . ' y su tracking eliminado</div>';
+    }
+    ?>
+    
+    <div class="section">
+        <h2>⚡ Probar el Cron Principal (Nuevo)</h2>
+        <p>El sistema v2.2.2 usa un solo cron ('wse_pro_process_abandoned_carts') que revisa todos los carritos. Usa este botón para ejecutarlo manualmente.</p>
+        <a href="?action=force_cron" class="btn btn-success" style="font-size: 16px; padding: 12px 24px;">
+            🚀 Forzar Ejecución del Cron Principal
+        </a>
+    </div>
+    
+    <div class="section">
+        <h2>⚙️ Configuración Actual</h2>
+        <?php
+        echo '<table>';
+        echo '<tr><th>Opción</th><th>Valor</th></tr>';
         
-        $required_columns = [
-            'id', 'session_key', 'cart_contents', 'cart_total', 'email', 'phone',
-            'billing_first_name', 'billing_last_name', 'billing_email', 'billing_phone',
-            'billing_address_1', 'billing_city', 'billing_state', 'billing_postcode',
-            'billing_country', 'status', 'messages_sent', 'created_at', 'updated_at'
-        ];
+        $enabled = get_option('wse_pro_enable_abandoned_cart', 'no');
+        echo '<tr><td><strong>Sistema Activado</strong></td><td>' . ($enabled === 'yes' ? '✅ SÍ' : '❌ NO') . '</td></tr>';
         
-        $existing_columns = array_column($columns, 'Field');
-        $missing_columns = array_diff($required_columns, $existing_columns);
-        
-        if (empty($missing_columns)) {
-            echo '<div class="status success">✅ Todas las columnas requeridas existen</div>';
-        } else {
-            echo '<div class="status warning">⚠️ Faltan columnas: <code>' . implode(', ', $missing_columns) . '</code></div>';
+        for ($i = 1; $i <= 3; $i++) {
+            $msg_enabled = get_option('wse_pro_abandoned_cart_enable_msg_' . $i, 'no');
+            $time = get_option('wse_pro_abandoned_cart_time_' . $i, 0);
+            $unit = get_option('wse_pro_abandoned_cart_unit_' . $i, 'minutes');
+            $coupon_enabled = get_option('wse_pro_abandoned_cart_coupon_enable_' . $i, 'no');
             
-            // BOTÓN DE MIGRACIÓN
-            if (isset($_POST['run_migration'])) {
-                echo "<h3>Ejecutando migración...</h3>";
-                
-                $billing_fields = [
-                    'billing_first_name' => "VARCHAR(100) DEFAULT '' AFTER phone",
-                    'billing_last_name' => "VARCHAR(100) DEFAULT '' AFTER billing_first_name",
-                    'billing_email' => "VARCHAR(255) DEFAULT '' AFTER billing_last_name",
-                    'billing_phone' => "VARCHAR(50) DEFAULT '' AFTER billing_email",
-                    'billing_address_1' => "VARCHAR(255) DEFAULT '' AFTER billing_phone",
-                    'billing_city' => "VARCHAR(100) DEFAULT '' AFTER billing_address_1",
-                    'billing_state' => "VARCHAR(100) DEFAULT '' AFTER billing_city",
-                    'billing_postcode' => "VARCHAR(20) DEFAULT '' AFTER billing_state",
-                    'billing_country' => "VARCHAR(2) DEFAULT '' AFTER billing_postcode",
-                ];
-                
-                foreach ($missing_columns as $column) {
-                    if (isset($billing_fields[$column])) {
-                        $sql = "ALTER TABLE $table_name ADD COLUMN $column {$billing_fields[$column]}";
-                        $result = $wpdb->query($sql);
-                        
-                        if ($result !== false) {
-                            echo '<div class="status success">✅ Columna <code>' . $column . '</code> agregada exitosamente</div>';
-                        } else {
-                            echo '<div class="status error">❌ Error al agregar <code>' . $column . '</code>: ' . $wpdb->last_error . '</div>';
-                        }
-                    } elseif ($column === 'messages_sent') {
-                        $sql = "ALTER TABLE $table_name ADD COLUMN messages_sent VARCHAR(20) DEFAULT '0,0,0' AFTER status";
-                        $result = $wpdb->query($sql);
-                        
-                        if ($result !== false) {
-                            echo '<div class="status success">✅ Columna <code>messages_sent</code> agregada exitosamente</div>';
-                        } else {
-                            echo '<div class="status error">❌ Error al agregar <code>messages_sent</code>: ' . $wpdb->last_error . '</div>';
-                        }
+            echo '<tr><td><strong>Mensaje ' . $i . '</strong></td><td>';
+            echo ($msg_enabled === 'yes' ? '✅ Activo' : '❌ Inactivo') . ' - ';
+            echo '<strong>' . $time . ' ' . $unit . '</strong>';
+            echo ($coupon_enabled === 'yes' ? ' 🎁 Con cupón' : '');
+            echo '</td></tr>';
+        }
+        echo '</table>';
+        ?>
+    </div>
+    
+    <div class="section">
+        <h2>🛒 Carritos Abandonados (últimos 20)</h2>
+        <?php
+        $carts = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DESC LIMIT 20");
+        
+        if (empty($carts)) {
+            echo '<div class="info">ℹ️ No hay carritos abandonados registrados</div>';
+        } else {
+            echo '<table>';
+            echo '<tr><th>ID</th><th>Teléfono / Email</th><th>Nombre</th><th>Total</th><th>Mensajes</th><th>Status</th><th>Creado</th><th>Acciones</th></tr>';
+            
+            foreach ($carts as $cart) {
+                // Formatear mensajes enviados
+                $messages_sent = explode(',', $cart->messages_sent);
+                $msg_status = '';
+                for ($i = 0; $i < 3; $i++) {
+                    if (isset($messages_sent[$i]) && $messages_sent[$i] == '1') {
+                        $msg_status .= '✅';
+                    } else {
+                        $msg_status .= '⏳';
                     }
                 }
                 
-                echo '<div class="status success">✅ Migración completada. Recarga la página para verificar.</div>';
-                echo '<a href="' . $_SERVER['PHP_SELF'] . '" class="button">Recargar Página</a>';
-            } else {
-                echo '<form method="post">';
-                echo '<button type="submit" name="run_migration" class="button">🚀 Ejecutar Migración Ahora</button>';
-                echo '</form>';
-            }
-        }
-        
-        // 3. MOSTRAR ESTRUCTURA ACTUAL
-        echo "<h2>3️⃣ Estructura Actual de la Tabla</h2>";
-        echo '<table>';
-        echo '<tr><th>Campo</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Por Defecto</th></tr>';
-        foreach ($columns as $column) {
-            echo '<tr>';
-            echo '<td><code>' . $column->Field . '</code></td>';
-            echo '<td>' . $column->Type . '</td>';
-            echo '<td>' . $column->Null . '</td>';
-            echo '<td>' . $column->Key . '</td>';
-            echo '<td>' . $column->Default . '</td>';
-            echo '</tr>';
-        }
-        echo '</table>';
-        
-        // 4. VERIFICAR DATOS DE EJEMPLO
-        echo "<h2>4️⃣ Datos de Ejemplo</h2>";
-        $sample_carts = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DESC LIMIT 5");
-        
-        if (!empty($sample_carts)) {
-            echo '<div class="status success">✅ Se encontraron ' . count($sample_carts) . ' registros</div>';
-            echo '<table>';
-            echo '<tr>
-                    <th>ID</th>
-                    <th>Email</th>
-                    <th>Teléfono</th>
-                    <th>Nombre</th>
-                    <th>Total</th>
-                    <th>Estado</th>
-                    <th>Mensajes</th>
-                    <th>Creado</th>
-                  </tr>';
-            foreach ($sample_carts as $cart) {
+                // Formatear estado
+                $status_color = '#6c757d'; // gris por defecto
+                if ($cart->status === 'active') $status_color = '#28a745'; // verde
+                if ($cart->status === 'recovered') $status_color = '#007cba'; // azul
+                
                 echo '<tr>';
-                echo '<td>' . $cart->id . '</td>';
-                echo '<td>' . $cart->email . '</td>';
-                echo '<td>' . $cart->phone . '</td>';
-                echo '<td>' . (isset($cart->billing_first_name) ? $cart->billing_first_name . ' ' . $cart->billing_last_name : 'N/A') . '</td>';
+                echo '<td><strong>#' . $cart->id . '</strong></td>';
+                echo '<td>' . esc_html($cart->billing_phone ? $cart->billing_phone : $cart->phone) . '<br>' . esc_html($cart->billing_email) . '</td>';
+                echo '<td>' . esc_html($cart->billing_first_name ? $cart->billing_first_name : $cart->first_name) . '</td>';
                 echo '<td>$' . number_format($cart->cart_total, 2) . '</td>';
-                echo '<td>' . $cart->status . '</td>';
-                echo '<td>' . (isset($cart->messages_sent) ? $cart->messages_sent : 'N/A') . '</td>';
-                echo '<td>' . $cart->created_at . '</td>';
+                echo '<td><span style="font-size: 18px;">' . $msg_status . '</span></td>';
+                echo '<td><span style="background: ' . $status_color . '; color: white; padding: 2px 8px; border-radius: 3px;">' . $cart->status . '</span></td>';
+                echo '<td>' . date('d/m/Y H:i', strtotime($cart->created_at)) . '</td>';
+                echo '<td>';
+                echo '<a href="?action=delete_cart&cart_id=' . $cart->id . '" class="btn btn-danger" style="font-size: 12px; padding: 5px 10px;" onclick="return confirm(\'¿Eliminar?\')">🗑️</a>';
+                echo '</td>';
                 echo '</tr>';
             }
             echo '</table>';
-        } else {
-            echo '<div class="status warning">⚠️ No hay registros en la tabla todavía</div>';
         }
-        
-        // 5. VERIFICAR CONFIGURACIÓN DEL PLUGIN
-        echo "<h2>5️⃣ Configuración de Prefijos de Cupón</h2>";
-        for ($i = 1; $i <= 3; $i++) {
-            $prefix = get_option('wse_pro_abandoned_cart_coupon_prefix_' . $i, 'woowapp-m' . $i);
-            $enabled = get_option('wse_pro_abandoned_cart_coupon_enable_' . $i, 'no');
-            
-            echo '<div class="status ' . ($enabled === 'yes' ? 'success' : 'warning') . '">';
-            echo '📋 Mensaje ' . $i . ': Prefijo = <code>' . $prefix . '</code> | ';
-            echo 'Estado = ' . ($enabled === 'yes' ? '✅ Activado' : '❌ Desactivado');
-            echo '</div>';
-        }
-        
-        // 6. INSTRUCCIONES
-        echo "<h2>6️⃣ Próximos Pasos</h2>";
-        echo '<div class="status success">';
-        echo '<p><strong>Si todo está en verde:</strong></p>';
-        echo '<ol>';
-        echo '<li>Elimina este archivo por seguridad</li>';
-        echo '<li>Ve a WooCommerce → Ajustes → WooWApp</li>';
-        echo '<li>Configura los prefijos de cupón personalizados en la sección Notificaciones</li>';
-        echo '<li>Haz una prueba creando un carrito abandonado</li>';
-        echo '</ol>';
-        echo '</div>';
-        
-        echo '<div class="status warning">';
-        echo '<p><strong>⚠️ IMPORTANTE - Elimina este archivo:</strong></p>';
-        echo '<p>Este script contiene información sensible. Elimínalo después de verificar:</p>';
-        echo '<pre>rm ' . __FILE__ . '</pre>';
-        echo '</div>';
         ?>
-        
-        <form method="post" style="margin-top: 30px;">
-            <button type="submit" name="delete_file" class="button danger" 
-                    onclick="return confirm('¿Estás seguro de que quieres eliminar este archivo?')">
-                🗑️ Eliminar Este Archivo de Diagnóstico
-            </button>
-        </form>
-        
+    </div>
+    
+    <div class="section">
+        <h2>🎁 Cupones Generados (últimos 20)</h2>
         <?php
-        if (isset($_POST['delete_file'])) {
-            if (unlink(__FILE__)) {
-                echo '<div class="status success">✅ Archivo eliminado exitosamente. Serás redirigido...</div>';
-                echo '<script>setTimeout(function(){ window.location.href = "' . admin_url() . '"; }, 2000);</script>';
+        $coupons = $wpdb->get_results("SELECT * FROM $coupons_table ORDER BY created_at DESC LIMIT 20");
+        
+        if (empty($coupons)) {
+            echo '<div class="info">ℹ️ No hay cupones generados aún</div>';
+        } else {
+            echo '<table>';
+            echo '<tr><th>Código</th><th>Teléfono</th><th>Carrito</th><th>Tipo</th><th>Descuento</th><th>Usado</th><th>Expira</th></tr>';
+            
+            foreach ($coupons as $coupon) {
+                echo '<tr>';
+                echo '<td><strong>' . esc_html($coupon->coupon_code) . '</strong></td>';
+                echo '<td>' . esc_html($coupon->customer_phone) . '</td>';
+                echo '<td>#' . $coupon->cart_id . ' (Msg ' . $coupon->message_number . ')</td>';
+                echo '<td>' . $coupon->discount_type . '</td>';
+                echo '<td>' . $coupon->discount_amount . ($coupon->discount_type === 'percent' ? '%' : '$') . '</td>';
+                echo '<td>' . ($coupon->used ? '✅ Usado' : '⏳ Pendiente') . '</td>';
+                echo '<td>' . date('d/m/Y', strtotime($coupon->expires_at)) . '</td>';
+                echo '</tr>';
+            }
+            echo '</table>';
+        }
+        ?>
+    </div>
+    
+    <div class="section">
+        <h2>⏰ Eventos Cron Programados (v2.2.2)</h2>
+        <?php
+        $cron_hook = 'wse_pro_process_abandoned_carts';
+        $next_scheduled = wp_next_scheduled($cron_hook);
+        
+        if (!$next_scheduled) {
+            echo '<div class="error">⚠️ No se encontró el evento cron principal (<strong>' . $cron_hook . '</strong>) programado.</div>';
+            echo '<p>Esto es un problema. El plugin no puede revisar los carritos automáticamente. Intenta desactivar y reactivar el plugin "WooWApp" para forzar que se vuelva a programar.</p>';
+        } else {
+            $time_left = $next_scheduled - time();
+            $time_left_str = '';
+            
+            if ($time_left > 0) {
+                $minutes = floor($time_left / 60);
+                $seconds = $time_left % 60;
+                $time_left_str = 'En ' . $minutes . 'm ' . $seconds . 's';
             } else {
-                echo '<div class="status error">❌ No se pudo eliminar el archivo. Hazlo manualmente.</div>';
+                $time_left_str = '⚠️ ¡Atascado! Debería haberse ejecutado hace ' . absint($time_left) . ' segundos.';
+            }
+                
+            echo '<table>';
+            echo '<tr><th>Hook Principal</th><th>Próxima Ejecución</th><th>Tiempo Restante</th></tr>';
+            echo '<tr>';
+            echo '<td><strong>' . $cron_hook . '</strong></td>';
+            echo '<td>' . date('d/m/Y H:i:s', $next_scheduled) . '</td>';
+            echo '<td>' . $time_left_str . '</td>';
+            echo '</tr>';
+            echo '</table>';
+            
+            if ($time_left <= 0) {
+                 echo '<div class="error">⚠️ <strong>Tu WP-Cron parece estar atascado o no funciona.</strong><br>El evento principal está en el pasado. Esto significa que tu sitio no está ejecutando tareas programadas. Debes configurar un "cron job" en tu hosting (cPanel/Plesk) para que visite <code>' . home_url('/wp-cron.php?doing_wp_cron') . '</code> cada 5 minutos.</div>';
             }
         }
         ?>
+    </div>
+    
+    <div class="section">
+        <h2>📋 Últimos Logs (wse-pro)</h2>
+        <?php
+        // Nombre de log correcto de la v2.2.2
+        $log_handle = 'wse-pro'; 
+        $log_file = WC_LOG_DIR . $log_handle . '-' . date('Y-m-d') . '.log';
+        
+        if (function_exists('wc_get_log_file_path')) {
+            $log_file = wc_get_log_file_path($log_handle);
+        }
+        
+        if (file_exists($log_file)) {
+            $log_content = file_get_contents($log_file);
+            $lines = explode("\n", $log_content);
+            $last_lines = array_slice($lines, -50); // Últimas 50 líneas
+            
+            echo '<pre>' . esc_html(implode("\n", $last_lines)) . '</pre>';
+            echo '<a href="' . admin_url('admin.php?page=wc-status&tab=logs') . '" class="btn" target="_blank">Ver Todos los Logs</a>';
+        } else {
+            echo '<div class="info">ℹ️ No hay logs disponibles para hoy (' . basename($log_file) . '). El archivo se creará cuando ocurra un evento (como enviar un mensaje de prueba o procesar un carrito).</div>';
+        }
+        ?>
+    </div>
+    
+    <div class="section">
+        <h3>⚠️ IMPORTANTE</h3>
+        <p><strong>Este archivo es solo para debugging. Elimínalo después de usarlo por seguridad.</strong></p>
+        <p>Ubicación: <code><?php echo __FILE__; ?></code></p>
     </div>
 </body>
 </html>
