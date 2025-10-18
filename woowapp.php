@@ -1783,6 +1783,7 @@ function handle_cart_capture() {
                 'billing_last_name' => $last_name,
                 'billing_email' => $email,
                 'billing_phone' => $phone,
+                'phone' => $phone,
                 'billing_address_1' => $address_1,
                 'billing_city' => $city,
                 'billing_state' => $state,
@@ -1800,6 +1801,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
