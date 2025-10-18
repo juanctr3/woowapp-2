@@ -594,142 +594,67 @@ final class WooWApp {
     /**
      * 🔧 Guardar carrito de forma SEGURA y UNIVERSAL
      */
-    /**
-     * 🔧 Guardar carrito de forma SEGURA y UNIVERSAL - CORREGIDO PARA EVITAR DUPLICADOS
-     */
     private function save_cart_to_database_safe($billing_data) {
         try {
             global $wpdb;
-            $table_name = $wpdb->prefix . 'wse_pro_abandoned_carts';
-
-            // Validar que WC y la sesión estén disponibles
-            if (!function_exists('WC') || !WC()->session) {
-                 $this->log_error('WC()->session no disponible en save_cart_to_database_safe');
-                 return false;
-            }
-
-            $session_id = WC()->session->get_customer_id();
+            
+            $session_id = WC()->session ? WC()->session->get_customer_id() : 0;
             $user_id = get_current_user_id();
             $cart = WC()->cart;
-            $current_time = current_time('mysql');
-
-            // 1. Buscar si ya existe un carrito ACTIVO para esta sesión
-            $existing_cart = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$table_name}
-                 WHERE session_id = %s AND status = 'active'",
-                $session_id
-            ));
-
-            if ($existing_cart) {
-                // -------- SI EXISTE: ACTUALIZAR --------
-                $update_data = [
-                    'user_id'            => $user_id,
-                    'first_name'         => $billing_data['billing_first_name'], // Actualizar por si cambió
-                    'phone'              => $billing_data['billing_phone'],      // Actualizar por si cambió
-                    'cart_contents'      => maybe_serialize($cart->get_cart()),
-                    'cart_total'         => floatval($cart->get_total('edit')),
-                    'updated_at'         => $current_time,
-                    // Datos de facturación siempre actualizados
-                    'billing_email'      => $billing_data['billing_email'],
-                    'billing_phone'      => $billing_data['billing_phone'],
-                    'billing_first_name' => $billing_data['billing_first_name'],
-                    'billing_last_name'  => $billing_data['billing_last_name'],
-                    'billing_address_1'  => $billing_data['billing_address_1'],
-                    'billing_city'       => $billing_data['billing_city'],
-                    'billing_state'      => $billing_data['billing_state'],
-                    'billing_postcode'   => $billing_data['billing_postcode'],
-                    'billing_country'    => $billing_data['billing_country'],
-                    // checkout_data también se actualiza (contiene todo el formulario)
-                    'checkout_data'      => isset($_POST) ? maybe_serialize(wp_unslash($_POST)) : null
-                ];
-
-                // Formatos para la actualización (deben coincidir con $update_data)
-                $update_format = [
-                    '%d', // user_id
-                    '%s', // first_name
-                    '%s', // phone
-                    '%s', // cart_contents
-                    '%f', // cart_total
-                    '%s', // updated_at
-                    '%s', // billing_email
-                    '%s', // billing_phone
-                    '%s', // billing_first_name
-                    '%s', // billing_last_name
-                    '%s', // billing_address_1
-                    '%s', // billing_city
-                    '%s', // billing_state
-                    '%s', // billing_postcode
-                    '%s', // billing_country
-                    '%s'  // checkout_data
-                ];
-
-                $result = $wpdb->update(
-                    $table_name,
-                    $update_data,
-                    ['id' => $existing_cart->id], // Condición WHERE
-                    $update_format,
-                    ['%d'] // Formato para el WHERE
-                );
-
-                if ($result === false) {
-                    $this->log_error('Error en UPDATE: ' . $wpdb->last_error);
-                    return false;
+            
+            // Preparar datos del carrito
+            $cart_data = [
+                'user_id' => $user_id,
+                'session_id' => $session_id,
+                'first_name' => $billing_data['billing_first_name'],
+                'phone' => $billing_data['billing_phone'],
+                'cart_contents' => maybe_serialize($cart->get_cart()),
+                'cart_total' => floatval($cart->get_total('edit')),
+                'created_at' => current_time('mysql'),
+                'updated_at' => current_time('mysql'),
+                'recovery_token' => bin2hex(random_bytes(16)),
+                'status' => 'active',
+                'messages_sent' => '0,0,0',
+                'billing_email' => $billing_data['billing_email'],
+                'billing_phone' => $billing_data['billing_phone'],
+                'billing_first_name' => $billing_data['billing_first_name'],
+                'billing_last_name' => $billing_data['billing_last_name'],
+                'billing_address_1' => $billing_data['billing_address_1'],
+                'billing_city' => $billing_data['billing_city'],
+                'billing_state' => $billing_data['billing_state'],
+                'billing_postcode' => $billing_data['billing_postcode'],
+                'billing_country' => $billing_data['billing_country'],
+            ];
+            
+            // Preparar formatos
+            $format = [];
+            foreach ($cart_data as $value) {
+                if (is_int($value)) {
+                    $format[] = '%d';
+                } elseif (is_float($value)) {
+                    $format[] = '%f';
+                } else {
+                    $format[] = '%s';
                 }
-
-                $this->log_info("✅ Carrito ACTUALIZADO - ID: {$existing_cart->id}");
-                return true;
-
-            } else {
-                // -------- SI NO EXISTE: INSERTAR --------
-                $insert_data = [
-                    'user_id'            => $user_id,
-                    'session_id'         => $session_id,
-                    'first_name'         => $billing_data['billing_first_name'],
-                    'phone'              => $billing_data['billing_phone'],
-                    'cart_contents'      => maybe_serialize($cart->get_cart()),
-                    'cart_total'         => floatval($cart->get_total('edit')),
-                    'created_at'         => $current_time, // Fecha de creación AHORA
-                    'updated_at'         => $current_time,
-                    'recovery_token'     => bin2hex(random_bytes(16)), // Token NUEVO
-                    'status'             => 'active',
-                    'messages_sent'      => '0,0,0', // Mensajes a CERO
-                    // Datos de facturación
-                    'billing_email'      => $billing_data['billing_email'],
-                    'billing_phone'      => $billing_data['billing_phone'],
-                    'billing_first_name' => $billing_data['billing_first_name'],
-                    'billing_last_name'  => $billing_data['billing_last_name'],
-                    'billing_address_1'  => $billing_data['billing_address_1'],
-                    'billing_city'       => $billing_data['billing_city'],
-                    'billing_state'      => $billing_data['billing_state'],
-                    'billing_postcode'   => $billing_data['billing_postcode'],
-                    'billing_country'    => $billing_data['billing_country'],
-                    // checkout_data
-                     'checkout_data'      => isset($_POST) ? maybe_serialize(wp_unslash($_POST)) : null
-                ];
-
-                // Formatos para la inserción (deben coincidir con $insert_data)
-                $insert_format = [
-                    '%d', '%s', '%s', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%s', // hasta messages_sent
-                    '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', // billing fields
-                    '%s' // checkout_data
-                ];
-
-                $result = $wpdb->insert(
-                    $table_name,
-                    $insert_data,
-                    $insert_format
-                );
-
-                if ($result === false) {
-                    $this->log_error('Error en INSERT: ' . $wpdb->last_error);
-                    return false;
-                }
-
-                $cart_id = $wpdb->insert_id;
-                $this->log_info("✅ Carrito NUEVO guardado - ID: {$cart_id}");
-                return true;
             }
-
+            
+            // Insertar
+            $result = $wpdb->insert(
+                $wpdb->prefix . 'wse_pro_abandoned_carts',
+                $cart_data,
+                $format
+            );
+            
+            if ($result === false) {
+                $this->log_error('Error en INSERT: ' . $wpdb->last_error);
+                return false;
+            }
+            
+            $cart_id = $wpdb->insert_id;
+            $this->log_info("✅ Carrito guardado - ID: {$cart_id}, Phone: " . $billing_data['billing_phone'] . ", Email: " . $billing_data['billing_email'] . ", Nombre: " . $billing_data['billing_first_name']);
+            
+            return true;
+            
         } catch (Exception $e) {
             $this->log_error('Excepción en save_cart_to_database_safe: ' . $e->getMessage());
             return false;
