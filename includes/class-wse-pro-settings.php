@@ -391,7 +391,31 @@ class WSE_Pro_Settings {
                 )
             ];
         }
-
+        // === INICIO NUEVA SECCIÓN: NOTIFICACIÓN DE RESEÑA PENDIENTE ===
+            [
+                'name' => __('Nueva Reseña Pendiente', 'woowapp-smsenlinea-pro'),
+                'type' => 'title',
+                'id' => 'wse_pro_admin_pending_review_title',
+                'desc' => __('Recibe una notificación cuando un cliente envíe una nueva reseña que requiera aprobación.', 'woowapp-smsenlinea-pro')
+            ],
+            [
+                'name' => __('Activar notificación de reseña pendiente', 'woowapp-smsenlinea-pro'),
+                'type' => 'checkbox',
+                'id' => 'wse_pro_enable_admin_pending_review',
+                'default' => 'no'
+            ],
+            [
+                'name' => __('Plantilla para Admin (Reseña Pendiente)', 'woowapp-smsenlinea-pro'),
+                'type' => 'textarea_with_pickers',
+                'id' => 'wse_pro_admin_message_pending_review',
+                'css' => 'width:100%; height:75px;',
+                'default' => sprintf(
+                    __('📝 Nueva reseña de {customer_fullname} para "{first_product_name}" (Pedido #{order_id}). Requiere aprobación. Calificación: %s estrellas.', 'woowapp-smsenlinea-pro'),
+                    '{review_rating}' // Placeholder para estrellas
+                ),
+                 'desc' => __('Placeholders disponibles: {customer_fullname}, {order_id}, {first_product_name}, {review_rating}, {review_content}', 'woowapp-smsenlinea-pro')
+            ],
+            // === FIN NUEVA SECCIÓN ===
         $settings[] = ['type' => 'sectionend', 'id' => 'wse_pro_admin_settings_end'];
         
         return $settings;
@@ -968,6 +992,7 @@ class WSE_Pro_Settings {
         ]);
     }
 }
+
 
 
 
