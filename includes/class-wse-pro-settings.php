@@ -199,7 +199,21 @@ class WSE_Pro_Settings {
                 'type' => 'title',
                 'id' => 'wse_pro_api_settings_title'
             ],
-            
+            // --- INICIO: Enlace a Documentación ---
+        [
+            'name' => __('Ayuda y Documentación', 'woowapp-smsenlinea-pro'), // Título para esta "sección"
+            'type' => 'title', // Usamos 'title' para que se muestre como un encabezado
+            'id'   => 'wse_pro_docs_link_section',
+            // En la descripción ponemos el botón y un texto explicativo
+            'desc' => '<a href="https://descargas.smsenlinea.com/documentaciones/woowapp.php" target="_blank" class="button button-primary">' .
+                      '<span class="dashicons dashicons-book-alt" style="vertical-align: middle; margin-right: 5px;"></span>' . // Icono opcional
+                      esc_html__('Ver Documentación Completa', 'woowapp-smsenlinea-pro') .
+                      '</a>' .
+                      '<p class="description" style="margin-top: 5px;">' .
+                      esc_html__('Consulta la guía detallada para configurar todas las opciones, entender los placeholders y solucionar problemas.', 'woowapp-smsenlinea-pro') .
+                      '</p>',
+        ],
+        // --- FIN: Enlace a Documentación ---
             [
                 'name' => __('Seleccionar API', 'woowapp-smsenlinea-pro'),
                 'type' => 'select',
@@ -1187,6 +1201,7 @@ class WSE_Pro_Settings {
     ]);
 }
 }
+
 
 
 
