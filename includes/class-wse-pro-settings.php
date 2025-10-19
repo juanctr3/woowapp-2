@@ -588,7 +588,7 @@ class WSE_Pro_Settings {
                 'desc'        => __('Base para el código del cupón, ej: GRACIAS', 'woowapp-smsenlinea-pro'),
                 'desc_tip'    => true,
             ],
-            ['type' => 'sectionend', 'id' => 'wse_pro_review_reward_end'],
+            ['type' => 'sectionend', 'id' => 'wse_pro_review_reward_end']
             // === FIN NUEVA SECCIÓN ===
 
         // Recuperación de Carrito Abandonado
@@ -992,6 +992,7 @@ class WSE_Pro_Settings {
         ]);
     }
 }
+
 
 
 
