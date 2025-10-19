@@ -30,6 +30,35 @@ define('WSE_PRO_UPDATE_ID', 'woowapp-pro-stable'); //
 
 // Hooks de activación y desactivación
 register_activation_hook(__FILE__, ['WooWApp', 'on_activation']);
+/**
+ * Registra una opción para redirigir al usuario a la página de licencia
+ * después de la activación del plugin.
+ */
+function wse_pro_activation_redirect() {
+    // Establecer un marcador temporal en las opciones de WP
+    add_option('wse_pro_activation_redirect', true);
+}
+// Añadir nuestra función al hook de activación, después de la activación principal
+register_activation_hook(__FILE__, 'wse_pro_activation_redirect');
+
+/**
+ * Realiza la redirección si el marcador está presente y luego lo elimina.
+ * Se engancha a admin_init para asegurar que ocurra en el panel de admin.
+ */
+function wse_pro_do_activation_redirect() {
+    // Verificar si nuestro marcador de redirección existe
+    if (get_option('wse_pro_activation_redirect', false)) {
+        // Eliminar el marcador para que no redirija siempre
+        delete_option('wse_pro_activation_redirect');
+        // Asegurarse de que no estamos en una llamada AJAX o similar
+        if (!wp_doing_ajax() && !isset($_GET['activate-multi'])) {
+            // Redirigir a la página de licencia (Ajustes > WooWApp Pro Licencia)
+            wp_safe_redirect(admin_url('options-general.php?page=wse-pro-license'));
+            exit; // Detener ejecución para que la redirección ocurra
+        }
+    }
+}
+add_action('admin_init', 'wse_pro_do_activation_redirect');
 register_deactivation_hook(__FILE__, ['WooWApp', 'on_deactivation']);
 
 // Declarar compatibilidad con HPOS
@@ -2334,6 +2363,54 @@ add_action('plugins_loaded', 'wse_pro_initialize_licensing_updater', 20);
 function wse_pro_is_license_active() {
     return get_option('wse_pro_license_status') === 'active';
 }
+/**
+ * Muestra un aviso en el panel de administración si la licencia de WooWApp Pro no está activa.
+ */
+function wse_pro_show_license_inactive_notice() {
+    // Comprobar si la licencia NO está activa Y si el usuario actual puede gestionar opciones
+    if (!wse_pro_is_license_active() && current_user_can('manage_options')) {
+        $license_page_url = admin_url('options-general.php?page=wse-pro-license');
+        $signup_url = 'https://descargas.smsenlinea.com/login.php'; // URL de registro/login proporcionada
+
+        ?>
+        <div class="notice notice-error is-dismissible"> <?php // Usamos notice-error para más visibilidad ?>
+            <p>
+                <strong><?php esc_html_e('WooWApp Pro:', 'woowapp-smsenlinea-pro'); ?></strong>
+                <?php esc_html_e('La licencia no está activa.', 'woowapp-smsenlinea-pro'); ?>
+                <a href="<?php echo esc_url($license_page_url); ?>" class="button button-primary" style="margin-left: 10px;"><?php esc_html_e('Activar Licencia', 'woowapp-smsenlinea-pro'); ?></a>
+                <a href="<?php echo esc_url($signup_url); ?>" class="button button-secondary" style="margin-left: 5px;" target="_blank"><?php esc_html_e('Obtener Clave / Crear Cuenta', 'woowapp-smsenlinea-pro'); ?></a>
+            </p>
+        </div>
+        <?php
+    }
+}
+// Enganchar la función para que se muestre en el panel de admin
+add_action('admin_notices', 'wse_pro_show_license_inactive_notice');
+
+/**
+ * Añade el mismo aviso dentro de la propia página de ajustes de WooWApp (pestañas principales).
+ */
+function wse_pro_show_license_notice_in_settings() {
+    // Solo mostrar si estamos en la página de ajustes de WooWApp y la licencia NO está activa
+    if (isset($_GET['page']) && $_GET['page'] === 'wc-settings' && isset($_GET['tab']) && $_GET['tab'] === 'woowapp') {
+        if (!wse_pro_is_license_active() && current_user_can('manage_options')) {
+            $license_page_url = admin_url('options-general.php?page=wse-pro-license');
+            $signup_url = 'https://descargas.smsenlinea.com/login.php';
+            ?>
+            <div class="notice notice-warning inline" style="margin-top: 15px; margin-bottom: 15px;"> <?php // Usamos notice-warning aquí ?>
+                 <p>
+                    <strong><?php esc_html_e('Licencia Inactiva:', 'woowapp-smsenlinea-pro'); ?></strong>
+                    <?php esc_html_e('Algunas funcionalidades podrían estar limitadas. Por favor, activa tu licencia.', 'woowapp-smsenlinea-pro'); ?>
+                    <a href="<?php echo esc_url($license_page_url); ?>" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e('Ir a Activar', 'woowapp-smsenlinea-pro'); ?></a>
+                    <a href="<?php echo esc_url($signup_url); ?>" class="button button-secondary" style="margin-left: 5px;" target="_blank"><?php esc_html_e('Obtener Clave', 'woowapp-smsenlinea-pro'); ?></a>
+                </p>
+            </div>
+            <?php
+        }
+    }
+}
+// Enganchar antes de que se muestren los campos de ajustes de WooWApp
+add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
 
 // Ejemplo de cómo proteger una funcionalidad (puedes añadir esto donde cargues funciones específicas):
 /*
@@ -2352,6 +2429,7 @@ function wse_pro_show_license_inactive_notice() {
     <?php
 }
 */
+
 
 
 
