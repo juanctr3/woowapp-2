@@ -512,13 +512,13 @@ class WSE_Pro_Settings {
             ['type' => 'sectionend', 'id' => 'wse_pro_review_reminders_end'],
 
             // Nueva opción para hacer obligatoria la calificación
-        [
-            'name' => __('¿Calificación obligatoria?', 'woowapp-smsenlinea-pro'),
-            'type' => 'checkbox',
-            'id' => 'wse_pro_require_review_rating',
-            'desc' => __('<strong>Marcar si la selección de estrellas es obligatoria para enviar la reseña.</strong>', 'woowapp-smsenlinea-pro'),
-            'default' => 'no' // Por defecto, no es obligatoria
-        ],
+            [
+                'name' => __('¿Calificación obligatoria?', 'woowapp-smsenlinea-pro'),
+                'type' => 'checkbox',
+                'id' => 'wse_pro_require_review_rating',
+                'desc' => __('<strong>Marcar si la selección de estrellas es obligatoria para enviar la reseña.</strong>', 'woowapp-smsenlinea-pro'),
+                'default' => 'no'
+            ],
         
             // === INICIO NUEVA SECCIÓN: RECOMPENSA POR RESEÑA ===
             [
@@ -550,7 +550,7 @@ class WSE_Pro_Settings {
                 'default' => 'no'
             ],
             [
-                'name'        => __( 'Estrellas mínimas para cupón', 'woowapp-smsenlinea-pro' ),
+                'name'        => __('Estrellas mínimas para cupón', 'woowapp-smsenlinea-pro'),
                 'id'          => 'wse_pro_review_reward_min_rating',
                 'type'        => 'select',
                 'options'     => [
@@ -564,17 +564,17 @@ class WSE_Pro_Settings {
                 'desc_tip'    => __('El cliente recibirá el cupón solo si su calificación es igual o mayor a esta.', 'woowapp-smsenlinea-pro')
             ],
             [
-                'name'    => __( 'Tipo de Descuento (Cupón)', 'woowapp-smsenlinea-pro' ),
+                'name'    => __('Tipo de Descuento (Cupón)', 'woowapp-smsenlinea-pro'),
                 'id'      => 'wse_pro_review_reward_coupon_type',
                 'type'    => 'select',
                 'options' => [
-                    'percent'    => __( 'Porcentaje (%)', 'woowapp-smsenlinea-pro' ),
-                    'fixed_cart' => __( 'Monto Fijo', 'woowapp-smsenlinea-pro' ),
+                    'percent'    => __('Porcentaje (%)', 'woowapp-smsenlinea-pro'),
+                    'fixed_cart' => __('Monto Fijo', 'woowapp-smsenlinea-pro'),
                 ],
                 'default' => 'percent',
             ],
             [
-                'name'        => __( 'Cantidad del Descuento (Cupón)', 'woowapp-smsenlinea-pro' ),
+                'name'        => __('Cantidad del Descuento (Cupón)', 'woowapp-smsenlinea-pro'),
                 'id'          => 'wse_pro_review_reward_coupon_amount',
                 'type'        => 'number',
                 'default'     => '15',
@@ -582,7 +582,7 @@ class WSE_Pro_Settings {
                 'desc_tip'    => __('Ej: 10 para 10% o $10.', 'woowapp-smsenlinea-pro')
             ],
             [
-                'name'        => __( 'Válido por (días) (Cupón)', 'woowapp-smsenlinea-pro' ),
+                'name'        => __('Válido por (días) (Cupón)', 'woowapp-smsenlinea-pro'),
                 'id'          => 'wse_pro_review_reward_coupon_expiry',
                 'type'        => 'number',
                 'default'     => '14',
@@ -590,7 +590,7 @@ class WSE_Pro_Settings {
                 'desc_tip'    => __('¿Cuántos días será válido el cupón desde que se envía?', 'woowapp-smsenlinea-pro')
             ],
             [
-                'name'        => __( 'Prefijo del Cupón (Cupón)', 'woowapp-smsenlinea-pro' ),
+                'name'        => __('Prefijo del Cupón (Cupón)', 'woowapp-smsenlinea-pro'),
                 'id'          => 'wse_pro_review_reward_coupon_prefix',
                 'type'        => 'text',
                 'default'     => 'RESEÑA',
@@ -598,15 +598,15 @@ class WSE_Pro_Settings {
                 'desc_tip'    => true,
             ],
             // Nuevo campo para mensaje de reseña enviada
-        [
-            'name' => __('Mensaje Reseña Enviada (Pendiente)', 'woowapp-smsenlinea-pro'),
-            'type' => 'textarea',
-            'id' => 'wse_pro_review_submitted_message',
-            'css' => 'width:100%; height:90px;',
-            'default' => __('¡Gracias por tu opinión! %%d reseña(s) han sido enviadas y están pendientes de aprobación. Apreciamos mucho tu tiempo y tus comentarios.', 'woowapp-smsenlinea-pro'),
-            'desc' => __('Mensaje mostrado al cliente tras enviar la reseña. Usa <code>%%d</code> donde quieras mostrar el número de reseñas enviadas.', 'woowapp-smsenlinea-pro'),
-            'desc_tip' => true
-        ],
+            [
+                'name' => __('Mensaje Reseña Enviada (Pendiente)', 'woowapp-smsenlinea-pro'),
+                'type' => 'textarea',
+                'id' => 'wse_pro_review_submitted_message',
+                'css' => 'width:100%; height:90px;',
+                'default' => __('¡Gracias por tu opinión! %d reseña(s) han sido enviadas y están pendientes de aprobación. Apreciamos mucho tu tiempo y tus comentarios.', 'woowapp-smsenlinea-pro'),
+                'desc' => __('Mensaje mostrado al cliente tras enviar la reseña. Usa <code>%d</code> donde quieras mostrar el número de reseñas enviadas.', 'woowapp-smsenlinea-pro'),
+                'desc_tip' => true
+            ],
         
             ['type' => 'sectionend', 'id' => 'wse_pro_review_reward_end'],
             // === FIN NUEVA SECCIÓN ===
@@ -762,9 +762,9 @@ class WSE_Pro_Settings {
                         style="width: 100px;"
                     >
                     <select name="wse_pro_abandoned_cart_unit_<?php echo $msg_num; ?>" style="width: 150px;">
-                        <option value="minutes" <?php selected($unit_value, 'minutes'); ?>><?php _e('Minutos', 'woowapp-smsenlinea-pro'); ?></option>
-                        <option value="hours" <?php selected($unit_value, 'hours'); ?>><?php _e('Horas', 'woowapp-smsenlinea-pro'); ?></option>
-                        <option value="days" <?php selected($unit_value, 'days'); ?>><?php _e('Días', 'woowapp-smsenlinea-pro'); ?></option>
+                        <option value="minutes" <?php selected($unit_value, 'minutes'); ?>><?php esc_html_e('Minutos', 'woowapp-smsenlinea-pro'); ?></option>
+                        <option value="hours" <?php selected($unit_value, 'hours'); ?>><?php esc_html_e('Horas', 'woowapp-smsenlinea-pro'); ?></option>
+                        <option value="days" <?php selected($unit_value, 'days'); ?>><?php esc_html_e('Días', 'woowapp-smsenlinea-pro'); ?></option>
                     </select>
                 </div>
                 <?php if (!empty($value['desc'])) : ?>
@@ -802,7 +802,7 @@ class WSE_Pro_Settings {
                                 <?php checked($enable, 'yes'); ?> 
                                 style="width: 20px; height: 20px;"
                             >
-                            <span><?php _e('Incluir cupón de descuento en este mensaje', 'woowapp-smsenlinea-pro'); ?></span>
+                            <span><?php esc_html_e('Incluir cupón de descuento en este mensaje', 'woowapp-smsenlinea-pro'); ?></span>
                         </label>
                     </p>
                     
@@ -810,7 +810,7 @@ class WSE_Pro_Settings {
                         <!-- NUEVO: Prefijo del cupón -->
                         <p style="margin: 0 0 10px 0;">
                             <label style="font-weight: 600; display: block; margin-bottom: 5px;">
-                                <?php _e('🏷️ Prefijo del cupón:', 'woowapp-smsenlinea-pro'); ?>
+                                <?php esc_html_e('🏷️ Prefijo del cupón:', 'woowapp-smsenlinea-pro'); ?>
                             </label>
                             <input 
                                 type="text" 
@@ -820,25 +820,25 @@ class WSE_Pro_Settings {
                                 style="width: 250px;"
                             >
                             <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">
-                                <?php _e('(Base del código, ej: DESCUENTO, PROMO)', 'woowapp-smsenlinea-pro'); ?>
+                                <?php esc_html_e('(Base del código, ej: DESCUENTO, PROMO)', 'woowapp-smsenlinea-pro'); ?>
                             </span>
                         </p>
                         
                         <!-- Tipo de descuento -->
                         <p style="margin: 0 0 10px 0;">
                             <label style="font-weight: 600; display: block; margin-bottom: 5px;">
-                                <?php _e('Tipo de descuento:', 'woowapp-smsenlinea-pro'); ?>
+                                <?php esc_html_e('Tipo de descuento:', 'woowapp-smsenlinea-pro'); ?>
                             </label>
                             <select name="wse_pro_abandoned_cart_coupon_type_<?php echo $msg_num; ?>" style="width: 200px;">
-                                <option value="percent" <?php selected($type, 'percent'); ?>><?php _e('Porcentaje (%)', 'woowapp-smsenlinea-pro'); ?></option>
-                                <option value="fixed_cart" <?php selected($type, 'fixed_cart'); ?>><?php _e('Monto Fijo', 'woowapp-smsenlinea-pro'); ?></option>
+                                <option value="percent" <?php selected($type, 'percent'); ?>><?php esc_html_e('Porcentaje (%)', 'woowapp-smsenlinea-pro'); ?></option>
+                                <option value="fixed_cart" <?php selected($type, 'fixed_cart'); ?>><?php esc_html_e('Monto Fijo', 'woowapp-smsenlinea-pro'); ?></option>
                             </select>
                         </p>
                         
                         <!-- Cantidad de descuento -->
                         <p style="margin: 0 0 10px 0;">
                             <label style="font-weight: 600; display: block; margin-bottom: 5px;">
-                                <?php _e('Cantidad de descuento:', 'woowapp-smsenlinea-pro'); ?>
+                                <?php esc_html_e('Cantidad de descuento:', 'woowapp-smsenlinea-pro'); ?>
                             </label>
                             <input 
                                 type="number" 
@@ -849,14 +849,14 @@ class WSE_Pro_Settings {
                                 style="width: 120px;"
                             >
                             <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">
-                                <?php _e('(Ej: 10 para 10% o $10)', 'woowapp-smsenlinea-pro'); ?>
+                                <?php esc_html_e('(Ej: 10 para 10% o $10)', 'woowapp-smsenlinea-pro'); ?>
                             </span>
                         </p>
                         
                         <!-- Días de validez -->
                         <p style="margin: 0;">
                             <label style="font-weight: 600; display: block; margin-bottom: 5px;">
-                                <?php _e('Válido por:', 'woowapp-smsenlinea-pro'); ?>
+                                <?php esc_html_e('Válido por:', 'woowapp-smsenlinea-pro'); ?>
                             </label>
                             <input 
                                 type="number" 
@@ -866,19 +866,19 @@ class WSE_Pro_Settings {
                                 max="365" 
                                 style="width: 80px;"
                             >
-                            <span style="margin-left: 8px;"><?php _e('días', 'woowapp-smsenlinea-pro'); ?></span>
+                            <span style="margin-left: 8px;"><?php esc_html_e('días', 'woowapp-smsenlinea-pro'); ?></span>
                         </p>
                     </div>
                     
                     <!-- Tip de ayuda -->
                     <div style="margin-top: 15px; padding: 12px; background: white; border-radius: 6px; border-left: 4px solid #6366f1;">
                         <p style="margin: 0; font-size: 13px; color: #6b7280;">
-                            <strong style="color: #1f2937;">💡 Tip:</strong> 
-                            <?php _e('Usa las variables {coupon_code}, {coupon_amount} y {coupon_expires} en tu plantilla para mostrar la información del cupón.', 'woowapp-smsenlinea-pro'); ?>
+                            <strong style="color: #1f2937;"><?php esc_html_e('💡 Tip:', 'woowapp-smsenlinea-pro'); ?></strong> 
+                            <?php esc_html_e('Usa las variables {coupon_code}, {coupon_amount} y {coupon_expires} en tu plantilla para mostrar la información del cupón.', 'woowapp-smsenlinea-pro'); ?>
                         </p>
                         <p style="margin: 8px 0 0 0; font-size: 12px; color: #9ca3af;">
                             <?php printf(
-                                __('El código generado será: <code>%s-ABC123</code> (donde ABC123 es único)', 'woowapp-smsenlinea-pro'),
+                                esc_html__('El código generado será: <code>%s-ABC123</code> (donde ABC123 es único)', 'woowapp-smsenlinea-pro'),
                                 esc_html($prefix)
                             ); ?>
                         </p>
@@ -1012,6 +1012,3 @@ class WSE_Pro_Settings {
         ]);
     }
 }
-
-
-

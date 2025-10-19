@@ -173,14 +173,18 @@ class WSE_Pro_Field_Detector {
     }
 
     /**
-     * 📝 Logging de detección
+     * 🔍 Logging de detección
      */
     private function log_detection($detected) {
         if (function_exists('wc_get_logger')) {
-            $message = "🔍 Campos detectados automáticamente:\n";
+            $message = __('🔍 Campos detectados automáticamente:', 'woowapp-smsenlinea-pro') . "\n";
             foreach ($detected as $field => $selectors) {
                 if ($field !== 'last_detected') {
-                    $message .= "- {$field}: " . implode(' | ', array_slice($selectors, 0, 2)) . "\n";
+                    $message .= sprintf(
+                        __('- %s: %s', 'woowapp-smsenlinea-pro'),
+                        $field,
+                        implode(' | ', array_slice($selectors, 0, 2))
+                    ) . "\n";
                 }
             }
             wc_get_logger()->info($message, ['source' => 'woowapp-field-detection']);
@@ -286,19 +290,22 @@ class WSE_Pro_Field_Detector {
         
         ?>
         <div class="wrap">
-            <h1>⚙️ Configuración de Campos de Captura - WooWApp</h1>
+            <h1><?php _e('⚙️ Configuración de Campos de Captura - WooWApp', 'woowapp-smsenlinea-pro'); ?></h1>
             
             <div class="notice notice-info" style="margin-top:20px;">
                 <p>
-                    <strong>ℹ️ Información:</strong> 
-                    Los campos se detectan automáticamente. Si quieres personalizarlos, puedes editar los selectores CSS aquí.
+                    <strong><?php _e('ℹ️ Información:', 'woowapp-smsenlinea-pro'); ?></strong> 
+                    <?php _e('Los campos se detectan automáticamente. Si quieres personalizarlos, puedes editar los selectores CSS aquí.', 'woowapp-smsenlinea-pro'); ?>
                 </p>
             </div>
 
             <?php if ($last_detected > 0): ?>
             <div class="notice notice-success">
                 <p>
-                    ✅ Última detección: <?php echo human_time_diff($last_detected); ?> atrás
+                    <?php printf(
+                        esc_html__('✅ Última detección: %s atrás', 'woowapp-smsenlinea-pro'),
+                        esc_html(human_time_diff($last_detected))
+                    ); ?>
                 </p>
             </div>
             <?php endif; ?>
@@ -306,9 +313,9 @@ class WSE_Pro_Field_Detector {
             <table class="wp-list-table widefat fixed striped" style="margin-top:20px;">
                 <thead>
                     <tr>
-                        <th style="width: 25%;">Campo</th>
-                        <th style="width: 50%;">Selectores CSS</th>
-                        <th style="width: 25%;">Acción</th>
+                        <th style="width: 25%;"><?php esc_html_e('Campo', 'woowapp-smsenlinea-pro'); ?></th>
+                        <th style="width: 50%;"><?php esc_html_e('Selectores CSS', 'woowapp-smsenlinea-pro'); ?></th>
+                        <th style="width: 25%;"><?php esc_html_e('Acción', 'woowapp-smsenlinea-pro'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -331,7 +338,7 @@ class WSE_Pro_Field_Detector {
                         $status = !empty($selectors) ? '✅' : '❌';
                     ?>
                     <tr>
-                        <td><strong><?php echo $status; ?> <?php echo $field_label; ?></strong></td>
+                        <td><strong><?php echo $status; ?> <?php echo esc_html($field_label); ?></strong></td>
                         <td>
                             <code style="display: block; padding: 10px; background: #f5f5f5; border-radius: 3px; word-break: break-word;">
                                 <?php echo esc_html($selectors_text); ?>
@@ -341,10 +348,10 @@ class WSE_Pro_Field_Detector {
                             <button 
                                 type="button" 
                                 class="button wse-test-selector" 
-                                data-field="<?php echo $field_key; ?>"
-                                data-selectors='<?php echo json_encode($selectors); ?>'
+                                data-field="<?php echo esc_attr($field_key); ?>"
+                                data-selectors='<?php echo esc_attr(wp_json_encode($selectors)); ?>'
                             >
-                                🧪 Probar
+                                🧪 <?php esc_html_e('Probar', 'woowapp-smsenlinea-pro'); ?>
                             </button>
                         </td>
                     </tr>
@@ -353,7 +360,7 @@ class WSE_Pro_Field_Detector {
             </table>
 
             <div style="margin-top:30px; padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
-                <h3>🔧 Personalizar Selectores</h3>
+                <h3><?php _e('🔧 Personalizar Selectores', 'woowapp-smsenlinea-pro'); ?></h3>
                 <form method="post" action="">
                     <?php wp_nonce_field('wse_pro_field_config', 'nonce'); ?>
 
@@ -361,20 +368,20 @@ class WSE_Pro_Field_Detector {
                         <tbody>
                             <?php foreach ($billing_fields as $field_key => $field_label): ?>
                             <tr>
-                                <th style="width: 25%;"><?php echo $field_label; ?></th>
+                                <th style="width: 25%;"><?php echo esc_html($field_label); ?></th>
                                 <td>
                                     <textarea 
-                                        name="wse_field_config[<?php echo $field_key; ?>]"
+                                        name="wse_field_config[<?php echo esc_attr($field_key); ?>]"
                                         rows="3"
                                         style="width: 100%; font-family: monospace; font-size: 12px;"
-                                        placeholder="Ingresa selectores separados por saltos de línea. Ej: #billing_phone"
+                                        placeholder="<?php esc_attr_e('Ingresa selectores separados por saltos de línea. Ej: #billing_phone', 'woowapp-smsenlinea-pro'); ?>"
                                     ><?php 
                                         if (isset($field_config[$field_key])) {
                                             echo esc_textarea(implode("\n", $field_config[$field_key]));
                                         } 
                                     ?></textarea>
                                     <p style="margin-top: 5px; font-size: 12px; color: #666;">
-                                        💡 Usa selectores CSS. Ejemplo: <code>#billing_phone</code>, <code>input[name="phone"]</code>
+                                        💡 <?php _e('Usa selectores CSS. Ejemplo:', 'woowapp-smsenlinea-pro'); ?> <code>#billing_phone</code>, <code>input[name="phone"]</code>
                                     </p>
                                 </td>
                             </tr>
@@ -383,12 +390,12 @@ class WSE_Pro_Field_Detector {
                     </table>
 
                     <button type="submit" name="save_field_config" class="button button-primary button-large">
-                        💾 Guardar Configuración Personalizada
+                        💾 <?php esc_html_e('Guardar Configuración Personalizada', 'woowapp-smsenlinea-pro'); ?>
                     </button>
                     
                     <button type="submit" name="reset_field_config" class="button button-secondary" 
                             style="margin-left: 10px;">
-                        🔄 Detectar Automáticamente
+                        🔄 <?php esc_html_e('Detectar Automáticamente', 'woowapp-smsenlinea-pro'); ?>
                     </button>
                 </form>
             </div>
@@ -397,7 +404,9 @@ class WSE_Pro_Field_Detector {
             <div id="wse-test-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.3); z-index: 9999; min-width: 400px;">
                 <h3 id="wse-test-title"></h3>
                 <p id="wse-test-result" style="padding: 15px; background: #f5f5f5; border-radius: 3px; margin: 20px 0;"></p>
-                <button type="button" class="button" onclick="document.getElementById('wse-test-modal').style.display='none';">Cerrar</button>
+                <button type="button" class="button" onclick="document.getElementById('wse-test-modal').style.display='none';">
+                    <?php esc_html_e('Cerrar', 'woowapp-smsenlinea-pro'); ?>
+                </button>
             </div>
 
             <script>
@@ -407,7 +416,7 @@ class WSE_Pro_Field_Detector {
                     const selectors = $(this).data('selectors');
                     
                     // Ir a checkout
-                    const checkoutUrl = '<?php echo wc_get_checkout_url(); ?>';
+                    const checkoutUrl = '<?php echo esc_js(wc_get_checkout_url()); ?>';
                     
                     // Guardar en sessionStorage para prueba
                     sessionStorage.setItem('wse_test_field', field);

@@ -112,7 +112,7 @@ class WSE_Pro_API_Handler {
     }
 
     /**
-     * Envía un mensaje. Función centralizada que elige el panel y método correctos.
+     * Envía un mensaje. Función centralizada que elige el panel y métodos correctos.
      *
      * @param string $phone       Número de teléfono de destino.
      * @param string $message     El mensaje a enviar.
@@ -331,9 +331,18 @@ class WSE_Pro_API_Handler {
 
         if (is_wp_error($response)) {
             $error = $response->get_error_message();
-            $this->log(sprintf('Fallo API (Ref: %s, Dest: %s). Error: %s', $order_id_log, $recipient_log, $error));
-            if($data_source && is_a($data_source, 'WC_Order')) {
-                $data_source->add_order_note(sprintf(__('Error WhatsApp (%s): %s', 'woowapp-smsenlinea-pro'), $recipient_log, $error));
+            $this->log(sprintf(
+                __('Fallo API (Ref: %s, Dest: %s). Error: %s', 'woowapp-smsenlinea-pro'),
+                $order_id_log,
+                $recipient_log,
+                $error
+            ));
+            if ($data_source && is_a($data_source, 'WC_Order')) {
+                $data_source->add_order_note(sprintf(
+                    __('Error WhatsApp (%s): %s', 'woowapp-smsenlinea-pro'),
+                    $recipient_log,
+                    $error
+                ));
             }
             return ['success' => false, 'message' => $error];
         }
@@ -346,10 +355,20 @@ class WSE_Pro_API_Handler {
 
         if ($is_panel1_success || $is_panel2_success || $is_panel1_queued_success) {
             $message_id = $body['data']['messageId'] ?? $body['data']['id'] ?? 'N/A';
-            $note = sprintf(__('Notificación WhatsApp enviada a %s (%s).', 'woowapp-smsenlinea-pro'), $recipient_log, $phone);
-            $this->log(sprintf('Éxito (Ref: %s, Tel: %s, Dest: %s). ID: %s', $order_id_log, $phone, $recipient_log, $message_id));
+            $note = sprintf(
+                __('Notificación WhatsApp enviada a %s (%s).', 'woowapp-smsenlinea-pro'),
+                $recipient_log,
+                $phone
+            );
+            $this->log(sprintf(
+                __('Éxito (Ref: %s, Tel: %s, Dest: %s). ID: %s', 'woowapp-smsenlinea-pro'),
+                $order_id_log,
+                $phone,
+                $recipient_log,
+                $message_id
+            ));
             
-            if($data_source && is_a($data_source, 'WC_Order')) {
+            if ($data_source && is_a($data_source, 'WC_Order')) {
                 $data_source->add_order_note($note);
             }
             
@@ -359,10 +378,21 @@ class WSE_Pro_API_Handler {
 
         } else {
             $error = $body['solution'] ?? $body['message'] ?? __('Error desconocido', 'woowapp-smsenlinea-pro');
-            $note = sprintf(__('Fallo al enviar WhatsApp a %s (%s). Razón: %s', 'woowapp-smsenlinea-pro'), $recipient_log, $phone, $error);
-            $this->log(sprintf('Fallo (Ref: %s, Tel: %s, Dest: %s). Razón: %s', $order_id_log, $phone, $recipient_log, $error));
+            $note = sprintf(
+                __('Fallo al enviar WhatsApp a %s (%s). Razón: %s', 'woowapp-smsenlinea-pro'),
+                $recipient_log,
+                $phone,
+                $error
+            );
+            $this->log(sprintf(
+                __('Fallo (Ref: %s, Tel: %s, Dest: %s). Razón: %s', 'woowapp-smsenlinea-pro'),
+                $order_id_log,
+                $phone,
+                $recipient_log,
+                $error
+            ));
             
-            if($data_source && is_a($data_source, 'WC_Order')) {
+            if ($data_source && is_a($data_source, 'WC_Order')) {
                 $data_source->add_order_note($note);
             }
             
@@ -392,12 +422,12 @@ class WSE_Pro_API_Handler {
         $test_number = isset($_POST['test_number']) ? sanitize_text_field($_POST['test_number']) : '';
         $selected_panel = get_option('wse_pro_api_panel_selection', 'panel2');
         
-        $panel_name = $selected_panel === 'panel1' ? 'Panel 1' : 'Panel 2';
+        $panel_name = $selected_panel === 'panel1' ? __('Panel 1', 'woowapp-smsenlinea-pro') : __('Panel 2', 'woowapp-smsenlinea-pro');
         $message_type = get_option('wse_pro_message_type_panel1', 'whatsapp');
         $channel_name = ($selected_panel === 'panel1') ? strtoupper($message_type) : 'WhatsApp';
 
-        $test_message = "✅ " . sprintf(
-            __('¡Mensaje de prueba (%s) desde tu tienda! La API de %s funciona.', 'woowapp-smsenlinea-pro'),
+        $test_message = sprintf(
+            __('✅ ¡Mensaje de prueba (%s) desde tu tienda! La API de %s funciona.', 'woowapp-smsenlinea-pro'),
             $channel_name,
             $panel_name
         );

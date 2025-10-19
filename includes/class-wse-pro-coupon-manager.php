@@ -171,7 +171,7 @@ class WSE_Pro_Coupon_Manager {
             wp_delete_post($coupon_id, true);
             
             $this->log_error(
-                'Error al registrar cupón en BD',
+                __('Error al registrar cupón en BD', 'woowapp-smsenlinea-pro'),
                 ['coupon_code' => $coupon_code, 'db_error' => $wpdb->last_error]
             );
             
@@ -183,7 +183,12 @@ class WSE_Pro_Coupon_Manager {
 
         // Log de éxito
         $this->log_info(
-            "Cupón generado: {$coupon_code} para carrito #{$args['cart_id']}, mensaje #{$args['message_number']}"
+            sprintf(
+                __('Cupón generado: %s para carrito #%d, mensaje #%d', 'woowapp-smsenlinea-pro'),
+                $coupon_code,
+                $args['cart_id'],
+                $args['message_number']
+            )
         );
 
         return [
@@ -286,7 +291,7 @@ class WSE_Pro_Coupon_Manager {
             
         } catch (Exception $e) {
             $this->log_error(
-                'Error al crear cupón en WooCommerce',
+                __('Error al crear cupón en WooCommerce', 'woowapp-smsenlinea-pro'),
                 ['coupon_code' => $coupon_code, 'error' => $e->getMessage()]
             );
             
@@ -311,7 +316,7 @@ class WSE_Pro_Coupon_Manager {
         // Validar que el cart_id sea válido
         if (empty($cart_id) || $cart_id <= 0) {
             $this->log_error(
-                'get_latest_coupon_for_cart: cart_id inválido',
+                __('get_latest_coupon_for_cart: cart_id inválido', 'woowapp-smsenlinea-pro'),
                 ['cart_id' => $cart_id]
             );
             return null;
@@ -320,7 +325,7 @@ class WSE_Pro_Coupon_Manager {
         // Verificar que la tabla existe
         if ($wpdb->get_var("SHOW TABLES LIKE '" . self::$table_name . "'") !== self::$table_name) {
             $this->log_error(
-                'Tabla de cupones no existe',
+                __('Tabla de cupones no existe', 'woowapp-smsenlinea-pro'),
                 ['table' => self::$table_name]
             );
             return null;
@@ -339,14 +344,18 @@ class WSE_Pro_Coupon_Manager {
         
         if ($coupon) {
             $this->log_info(
-                "Cupón encontrado para carrito #{$cart_id}: {$coupon->coupon_code}"
+                sprintf(
+                    __('Cupón encontrado para carrito #%d: %s', 'woowapp-smsenlinea-pro'),
+                    $cart_id,
+                    $coupon->coupon_code
+                )
             );
             
             // Verificar que el cupón realmente exista en WooCommerce
             $wc_coupon_id = wc_get_coupon_id_by_code($coupon->coupon_code);
             if (!$wc_coupon_id) {
                 $this->log_error(
-                    "Cupón existe en BD pero no en WooCommerce",
+                    __('Cupón existe en BD pero no en WooCommerce', 'woowapp-smsenlinea-pro'),
                     ['coupon_code' => $coupon->coupon_code, 'cart_id' => $cart_id]
                 );
                 return null;
@@ -356,7 +365,10 @@ class WSE_Pro_Coupon_Manager {
         }
         
         $this->log_info(
-            "No se encontró cupón válido para carrito #{$cart_id}"
+            sprintf(
+                __('No se encontró cupón válido para carrito #%d', 'woowapp-smsenlinea-pro'),
+                $cart_id
+            )
         );
         
         return null;
@@ -415,10 +427,17 @@ class WSE_Pro_Coupon_Manager {
         );
 
         if ($result) {
-            $this->log_info(
-                "Cupón marcado como usado: {$coupon_code}" . 
-                ($order_id > 0 ? " en pedido #{$order_id}" : "")
+            $message = sprintf(
+                __('Cupón marcado como usado: %s', 'woowapp-smsenlinea-pro'),
+                $coupon_code
             );
+            if ($order_id > 0) {
+                $message .= sprintf(
+                    __(' en pedido #%d', 'woowapp-smsenlinea-pro'),
+                    $order_id
+                );
+            }
+            $this->log_info($message);
         }
 
         return ($result !== false);
@@ -605,7 +624,10 @@ class WSE_Pro_Coupon_Manager {
         // Log de limpieza
         if ($deleted_count > 0 && get_option('wse_pro_enable_log') === 'yes') {
             wc_get_logger()->info(
-                "Limpieza automática: {$deleted_count} cupones expirados eliminados",
+                sprintf(
+                    __('Limpieza automática: %d cupones expirados eliminados', 'woowapp-smsenlinea-pro'),
+                    $deleted_count
+                ),
                 ['source' => 'woowapp-' . date('Y-m-d')]
             );
         }
@@ -849,7 +871,7 @@ class WSE_Pro_Coupon_Manager {
         $health['table_exists'] = $table_exists;
         
         if (!$table_exists) {
-            $health['issues'][] = 'Tabla no existe';
+            $health['issues'][] = __('Tabla no existe', 'woowapp-smsenlinea-pro');
             return $health;
         }
         
@@ -871,7 +893,10 @@ class WSE_Pro_Coupon_Manager {
         
         if (!$health['indexes_ok']) {
             $missing = array_diff($required_indexes, $existing_indexes);
-            $health['issues'][] = 'Índices faltantes: ' . implode(', ', $missing);
+            $health['issues'][] = sprintf(
+                __('Índices faltantes: %s', 'woowapp-smsenlinea-pro'),
+                implode(', ', $missing)
+            );
         }
         
         return $health;

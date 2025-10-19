@@ -246,7 +246,7 @@ class WSE_Pro_Server_Compatibility {
         
         ?>
         <div class="wrap">
-            <h1>🔧 Diagnóstico Automático de Servidor - WooWApp</h1>
+            <h1><?php _e('🔧 Diagnóstico Automático de Servidor - WooWApp', 'woowapp-smsenlinea-pro'); ?></h1>
             
             <style>
                 .status-card {
@@ -315,40 +315,40 @@ class WSE_Pro_Server_Compatibility {
             
             <!-- SERVIDOR -->
             <div class="status-card ok">
-                <h2>🖥️ Información del Servidor</h2>
+                <h2><?php _e('🖥️ Información del Servidor', 'woowapp-smsenlinea-pro'); ?></h2>
                 <div class="info-grid">
                     <div class="info-box">
-                        <strong>Tipo de Servidor</strong>
-                        <code><?php echo strtoupper($server_info['server_type']); ?></code>
-                        <span class="status-badge ok">✅ Detectado</span>
+                        <strong><?php esc_html_e('Tipo de Servidor', 'woowapp-smsenlinea-pro'); ?></strong>
+                        <code><?php echo esc_html(strtoupper($server_info['server_type'])); ?></code>
+                        <span class="status-badge ok">✅ <?php esc_html_e('Detectado', 'woowapp-smsenlinea-pro'); ?></span>
                     </div>
                     
                     <div class="info-box">
-                        <strong>Software</strong>
+                        <strong><?php esc_html_e('Software', 'woowapp-smsenlinea-pro'); ?></strong>
                         <code><?php echo esc_html($server_info['server_software']); ?></code>
                     </div>
                     
                     <div class="info-box">
-                        <strong>Versión de PHP</strong>
+                        <strong><?php esc_html_e('Versión de PHP', 'woowapp-smsenlinea-pro'); ?></strong>
                         <code><?php echo esc_html($server_info['php_version']); ?></code>
                         <span class="status-badge ok">✅ 8.3+</span>
                     </div>
                     
                     <?php if ($server_info['php_fpm_socket']): ?>
                     <div class="info-box">
-                        <strong>Socket PHP-FPM</strong>
+                        <strong><?php esc_html_e('Socket PHP-FPM', 'woowapp-smsenlinea-pro'); ?></strong>
                         <code><?php echo esc_html($server_info['php_fpm_socket']); ?></code>
-                        <span class="status-badge ok">✅ Encontrado</span>
+                        <span class="status-badge ok">✅ <?php esc_html_e('Encontrado', 'woowapp-smsenlinea-pro'); ?></span>
                     </div>
                     <?php endif; ?>
                     
                     <div class="info-box">
-                        <strong>Ejecución Máxima</strong>
+                        <strong><?php esc_html_e('Ejecución Máxima', 'woowapp-smsenlinea-pro'); ?></strong>
                         <code><?php echo esc_html($server_info['max_execution_time']); ?>s</code>
                     </div>
                     
                     <div class="info-box">
-                        <strong>Límite de Memoria</strong>
+                        <strong><?php esc_html_e('Límite de Memoria', 'woowapp-smsenlinea-pro'); ?></strong>
                         <code><?php echo esc_html($server_info['memory_limit']); ?></code>
                     </div>
                 </div>
@@ -356,11 +356,11 @@ class WSE_Pro_Server_Compatibility {
 
             <!-- PHP -->
             <div class="status-card <?php echo (isset($diagnostics['php']) && $diagnostics['php']['version_ok']) ? 'ok' : 'error'; ?>">
-                <h2>🐘 PHP</h2>
+                <h2><?php _e('😊 PHP', 'woowapp-smsenlinea-pro'); ?></h2>
                 <div class="info-grid">
                     <?php if (isset($diagnostics['php'])): ?>
                         <div class="info-box">
-                            <strong>Versión Soportada</strong>
+                            <strong><?php esc_html_e('Versión Soportada', 'woowapp-smsenlinea-pro'); ?></strong>
                             <span class="status-badge <?php echo $diagnostics['php']['version_ok'] ? 'ok' : 'error'; ?>">
                                 <?php echo $diagnostics['php']['version_ok'] ? '✅' : '❌'; ?>
                             </span>
@@ -368,9 +368,9 @@ class WSE_Pro_Server_Compatibility {
                         
                         <?php foreach ($diagnostics['php']['extensions'] as $ext => $enabled): ?>
                         <div class="info-box">
-                            <strong><?php echo ucfirst($ext); ?></strong>
+                            <strong><?php echo esc_html(ucfirst($ext)); ?></strong>
                             <span class="status-badge <?php echo $enabled ? 'ok' : 'error'; ?>">
-                                <?php echo $enabled ? '✅ Activo' : '❌ Inactivo'; ?>
+                                <?php echo $enabled ? '✅ ' . esc_html__('Activo', 'woowapp-smsenlinea-pro') : '❌ ' . esc_html__('Inactivo', 'woowapp-smsenlinea-pro'); ?>
                             </span>
                         </div>
                         <?php endforeach; ?>
@@ -380,24 +380,24 @@ class WSE_Pro_Server_Compatibility {
 
             <!-- WORDPRESS -->
             <div class="status-card ok">
-                <h2>📘 WordPress</h2>
+                <h2><?php _e('📘 WordPress', 'woowapp-smsenlinea-pro'); ?></h2>
                 <div class="info-grid">
                     <?php if (isset($diagnostics['wordpress'])): ?>
                         <div class="info-box">
-                            <strong>Versión</strong>
+                            <strong><?php esc_html_e('Versión', 'woowapp-smsenlinea-pro'); ?></strong>
                             <code><?php echo esc_html($diagnostics['wordpress']['version']); ?></code>
                         </div>
                         
                         <div class="info-box">
-                            <strong>Debug</strong>
+                            <strong><?php esc_html_e('Debug', 'woowapp-smsenlinea-pro'); ?></strong>
                             <span class="status-badge <?php echo $diagnostics['wordpress']['debug_enabled'] ? 'warning' : 'ok'; ?>">
-                                <?php echo $diagnostics['wordpress']['debug_enabled'] ? '⚠️ Activo' : '✅ Desactivo'; ?>
+                                <?php echo $diagnostics['wordpress']['debug_enabled'] ? '⚠️ ' . esc_html__('Activo', 'woowapp-smsenlinea-pro') : '✅ ' . esc_html__('Desactivo', 'woowapp-smsenlinea-pro'); ?>
                             </span>
                         </div>
                         
                         <div class="info-box">
-                            <strong>Plugins Activos</strong>
-                            <code><?php echo $diagnostics['wordpress']['plugins_active']; ?></code>
+                            <strong><?php esc_html_e('Plugins Activos', 'woowapp-smsenlinea-pro'); ?></strong>
+                            <code><?php echo (int) $diagnostics['wordpress']['plugins_active']; ?></code>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -405,27 +405,27 @@ class WSE_Pro_Server_Compatibility {
 
             <!-- WOOCOMMERCE -->
             <div class="status-card ok">
-                <h2>🛒 WooCommerce</h2>
+                <h2><?php _e('🛒 WooCommerce', 'woowapp-smsenlinea-pro'); ?></h2>
                 <div class="info-grid">
                     <?php if (isset($diagnostics['woocommerce'])): ?>
                         <div class="info-box">
-                            <strong>Estado</strong>
+                            <strong><?php esc_html_e('Estado', 'woowapp-smsenlinea-pro'); ?></strong>
                             <span class="status-badge <?php echo $diagnostics['woocommerce']['status'] === 'active' ? 'ok' : 'error'; ?>">
-                                <?php echo $diagnostics['woocommerce']['status'] === 'active' ? '✅ Activo' : '❌ Inactivo'; ?>
+                                <?php echo $diagnostics['woocommerce']['status'] === 'active' ? '✅ ' . esc_html__('Activo', 'woowapp-smsenlinea-pro') : '❌ ' . esc_html__('Inactivo', 'woowapp-smsenlinea-pro'); ?>
                             </span>
                         </div>
                         
                         <?php if (isset($diagnostics['woocommerce']['version'])): ?>
                         <div class="info-box">
-                            <strong>Versión</strong>
+                            <strong><?php esc_html_e('Versión', 'woowapp-smsenlinea-pro'); ?></strong>
                             <code><?php echo esc_html($diagnostics['woocommerce']['version']); ?></code>
                         </div>
                         <?php endif; ?>
                         
                         <div class="info-box">
-                            <strong>Página de Checkout</strong>
+                            <strong><?php esc_html_e('Página de Checkout', 'woowapp-smsenlinea-pro'); ?></strong>
                             <span class="status-badge <?php echo $diagnostics['woocommerce']['checkout_page'] ? 'ok' : 'error'; ?>">
-                                <?php echo $diagnostics['woocommerce']['checkout_page'] ? '✅ ID: ' . $diagnostics['woocommerce']['checkout_page'] : '❌ No encontrada'; ?>
+                                <?php echo $diagnostics['woocommerce']['checkout_page'] ? '✅ ' . sprintf(esc_html__('ID: %d', 'woowapp-smsenlinea-pro'), (int) $diagnostics['woocommerce']['checkout_page']) : '❌ ' . esc_html__('No encontrada', 'woowapp-smsenlinea-pro'); ?>
                             </span>
                         </div>
                     <?php endif; ?>
@@ -434,29 +434,29 @@ class WSE_Pro_Server_Compatibility {
 
             <!-- BASE DE DATOS -->
             <div class="status-card <?php echo (isset($diagnostics['database']) && $diagnostics['database']['tables']['abandoned_carts']) ? 'ok' : 'error'; ?>">
-                <h2>🗄️ Base de Datos</h2>
+                <h2><?php _e('🗄️ Base de Datos', 'woowapp-smsenlinea-pro'); ?></h2>
                 <div class="info-grid">
                     <?php if (isset($diagnostics['database'])): ?>
                         <div class="info-box">
-                            <strong>Host</strong>
+                            <strong><?php esc_html_e('Host', 'woowapp-smsenlinea-pro'); ?></strong>
                             <code><?php echo esc_html($diagnostics['database']['host']); ?></code>
                         </div>
                         
                         <div class="info-box">
-                            <strong>Base de Datos</strong>
+                            <strong><?php esc_html_e('Base de Datos', 'woowapp-smsenlinea-pro'); ?></strong>
                             <code><?php echo esc_html($diagnostics['database']['name']); ?></code>
                         </div>
                         
                         <div class="info-box">
-                            <strong>Charset</strong>
+                            <strong><?php esc_html_e('Charset', 'woowapp-smsenlinea-pro'); ?></strong>
                             <code><?php echo esc_html($diagnostics['database']['charset']); ?></code>
                         </div>
                         
                         <?php foreach ($diagnostics['database']['tables'] as $table => $exists): ?>
                         <div class="info-box">
-                            <strong><?php echo ucfirst(str_replace('_', ' ', $table)); ?></strong>
+                            <strong><?php echo esc_html(ucfirst(str_replace('_', ' ', $table))); ?></strong>
                             <span class="status-badge <?php echo $exists ? 'ok' : 'error'; ?>">
-                                <?php echo $exists ? '✅ Existe' : '❌ No existe'; ?>
+                                <?php echo $exists ? '✅ ' . esc_html__('Existe', 'woowapp-smsenlinea-pro') : '❌ ' . esc_html__('No existe', 'woowapp-smsenlinea-pro'); ?>
                             </span>
                         </div>
                         <?php endforeach; ?>
@@ -466,23 +466,23 @@ class WSE_Pro_Server_Compatibility {
 
             <!-- ACCIONES RÁPIDAS -->
             <div class="status-card warning">
-                <h2>⚡ Acciones Rápidas</h2>
+                <h2><?php _e('⚡ Acciones Rápidas', 'woowapp-smsenlinea-pro'); ?></h2>
                 <p>
-                    <a href="<?php echo admin_url('admin.php?page=wc-settings&tab=woowapp'); ?>" class="button button-primary">⚙️ Configuración de WooWApp</a>
-                    <a href="<?php echo admin_url('admin.php?page=wse-pro-stats'); ?>" class="button button-secondary">📊 Ver Estadísticas</a>
-                    <a href="<?php echo admin_url('admin.php?page=wc-status&tab=logs'); ?>" class="button button-secondary">📝 Ver Logs</a>
-                    <button onclick="location.reload()" class="button button-secondary">🔄 Recargar Diagnóstico</button>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=wc-settings&tab=woowapp')); ?>" class="button button-primary">⚙️ <?php esc_html_e('Configuración de WooWApp', 'woowapp-smsenlinea-pro'); ?></a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=wse-pro-stats')); ?>" class="button button-secondary">📊 <?php esc_html_e('Ver Estadísticas', 'woowapp-smsenlinea-pro'); ?></a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=wc-status&tab=logs')); ?>" class="button button-secondary">📝 <?php esc_html_e('Ver Logs', 'woowapp-smsenlinea-pro'); ?></a>
+                    <button onclick="location.reload()" class="button button-secondary">🔄 <?php esc_html_e('Recargar Diagnóstico', 'woowapp-smsenlinea-pro'); ?></button>
                 </p>
             </div>
 
             <!-- RECOMENDACIONES -->
             <div class="status-card warning">
-                <h2>💡 Recomendaciones</h2>
+                <h2><?php _e('💡 Recomendaciones', 'woowapp-smsenlinea-pro'); ?></h2>
                 <ul style="line-height: 1.8;">
-                    <li>✅ PHP 8.3 es compatible - No requiere cambios</li>
-                    <li>✅ El plugin se adapta automáticamente a Apache y Nginx</li>
-                    <li>✅ Los datos se capturan con múltiples métodos (fallback automático)</li>
-                    <li>🔧 Si ves errores, revisa los logs en WooCommerce > Estado > Registros</li>
+                    <li>✅ <?php _e('PHP 8.3 es compatible - No requiere cambios', 'woowapp-smsenlinea-pro'); ?></li>
+                    <li>✅ <?php _e('El plugin se adapta automáticamente a Apache y Nginx', 'woowapp-smsenlinea-pro'); ?></li>
+                    <li>✅ <?php _e('Los datos se capturan con múltiples métodos (fallback automático)', 'woowapp-smsenlinea-pro'); ?></li>
+                    <li>🔧 <?php _e('Si ves errores, revisa los logs en WooCommerce > Estado > Registros', 'woowapp-smsenlinea-pro'); ?></li>
                 </ul>
             </div>
         </div>

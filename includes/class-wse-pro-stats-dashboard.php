@@ -28,8 +28,8 @@ class WSE_Pro_Stats_Dashboard {
     public function add_stats_menu() {
         add_submenu_page(
             'woocommerce',
-            __('Estadísticas WooWApp', 'wse-pro'),
-            __('📊 Estadísticas WooWApp', 'wse-pro'),
+            __('Estadísticas WooWApp', 'woowapp-smsenlinea-pro'),
+            __('📊 Estadísticas WooWApp', 'woowapp-smsenlinea-pro'),
             'manage_woocommerce',
             'wse-pro-stats',
             [$this, 'render_stats_page']
@@ -78,17 +78,17 @@ class WSE_Pro_Stats_Dashboard {
         
         ?>
         <div class="wrap wse-stats-wrap">
-            <h1>📊 Estadísticas de Recuperación de Carritos</h1>
+            <h1><?php _e('📊 Estadísticas de Recuperación de Carritos', 'woowapp-smsenlinea-pro'); ?></h1>
             
             <!-- Selector de Periodo -->
             <div class="wse-stats-header">
                 <div class="wse-period-selector">
-                    <label>📅 Periodo:</label>
+                    <label><?php _e('📅 Periodo:', 'woowapp-smsenlinea-pro'); ?></label>
                     <select id="wse-period-select" onchange="window.location.href='?page=wse-pro-stats&period='+this.value">
-                        <option value="7" <?php selected($period, '7'); ?>>Últimos 7 días</option>
-                        <option value="30" <?php selected($period, '30'); ?>>Últimos 30 días</option>
-                        <option value="90" <?php selected($period, '90'); ?>>Últimos 90 días</option>
-                        <option value="365" <?php selected($period, '365'); ?>>Último año</option>
+                        <option value="7" <?php selected($period, '7'); ?>><?php esc_html_e('Últimos 7 días', 'woowapp-smsenlinea-pro'); ?></option>
+                        <option value="30" <?php selected($period, '30'); ?>><?php esc_html_e('Últimos 30 días', 'woowapp-smsenlinea-pro'); ?></option>
+                        <option value="90" <?php selected($period, '90'); ?>><?php esc_html_e('Últimos 90 días', 'woowapp-smsenlinea-pro'); ?></option>
+                        <option value="365" <?php selected($period, '365'); ?>><?php esc_html_e('Último año', 'woowapp-smsenlinea-pro'); ?></option>
                     </select>
                 </div>
             </div>
@@ -98,11 +98,11 @@ class WSE_Pro_Stats_Dashboard {
                 <div class="wse-stat-card">
                     <div class="stat-icon">🛒</div>
                     <div class="stat-content">
-                        <div class="stat-label">Carritos Abandonados</div>
+                        <div class="stat-label"><?php _e('Carritos Abandonados', 'woowapp-smsenlinea-pro'); ?></div>
                         <div class="stat-value"><?php echo number_format($stats['total_carts']); ?></div>
                         <div class="stat-change <?php echo $stats['carts_trend'] >= 0 ? 'positive' : 'negative'; ?>">
                             <?php echo $stats['carts_trend'] >= 0 ? '↑' : '↓'; ?> 
-                            <?php echo abs($stats['carts_trend']); ?>% vs periodo anterior
+                            <?php echo abs($stats['carts_trend']); ?>% <?php _e('vs periodo anterior', 'woowapp-smsenlinea-pro'); ?>
                         </div>
                     </div>
                 </div>
@@ -110,12 +110,12 @@ class WSE_Pro_Stats_Dashboard {
                 <div class="wse-stat-card">
                     <div class="stat-icon">📤</div>
                     <div class="stat-content">
-                        <div class="stat-label">Mensajes Enviados</div>
+                        <div class="stat-label"><?php _e('Mensajes Enviados', 'woowapp-smsenlinea-pro'); ?></div>
                         <div class="stat-value"><?php echo number_format($stats['total_sent']); ?></div>
                         <div class="stat-detail">
-                            Msg1: <?php echo $stats['sent_by_message'][1]; ?> | 
-                            Msg2: <?php echo $stats['sent_by_message'][2]; ?> | 
-                            Msg3: <?php echo $stats['sent_by_message'][3]; ?>
+                            <?php esc_html_e('Msg1:', 'woowapp-smsenlinea-pro'); ?> <?php echo $stats['sent_by_message'][1]; ?> | 
+                            <?php esc_html_e('Msg2:', 'woowapp-smsenlinea-pro'); ?> <?php echo $stats['sent_by_message'][2]; ?> | 
+                            <?php esc_html_e('Msg3:', 'woowapp-smsenlinea-pro'); ?> <?php echo $stats['sent_by_message'][3]; ?>
                         </div>
                     </div>
                 </div>
@@ -123,10 +123,10 @@ class WSE_Pro_Stats_Dashboard {
                 <div class="wse-stat-card highlight">
                     <div class="stat-icon">🔗</div>
                     <div class="stat-content">
-                        <div class="stat-label">Clicks en Enlaces</div>
+                        <div class="stat-label"><?php _e('Clicks en Enlaces', 'woowapp-smsenlinea-pro'); ?></div>
                         <div class="stat-value"><?php echo number_format($stats['total_clicks']); ?></div>
                         <div class="stat-detail">
-                            CTR: <?php echo number_format($stats['click_rate'], 1); ?>%
+                            <?php esc_html_e('CTR:', 'woowapp-smsenlinea-pro'); ?> <?php echo number_format($stats['click_rate'], 1); ?>%
                         </div>
                     </div>
                 </div>
@@ -134,10 +134,10 @@ class WSE_Pro_Stats_Dashboard {
                 <div class="wse-stat-card success">
                     <div class="stat-icon">🎉</div>
                     <div class="stat-content">
-                        <div class="stat-label">Conversiones</div>
+                        <div class="stat-label"><?php _e('Conversiones', 'woowapp-smsenlinea-pro'); ?></div>
                         <div class="stat-value"><?php echo number_format($stats['total_conversions']); ?></div>
                         <div class="stat-detail">
-                            Tasa: <?php echo number_format($stats['conversion_rate'], 1); ?>%
+                            <?php esc_html_e('Tasa:', 'woowapp-smsenlinea-pro'); ?> <?php echo number_format($stats['conversion_rate'], 1); ?>%
                         </div>
                     </div>
                 </div>
@@ -145,10 +145,10 @@ class WSE_Pro_Stats_Dashboard {
                 <div class="wse-stat-card revenue">
                     <div class="stat-icon">💰</div>
                     <div class="stat-content">
-                        <div class="stat-label">Ingresos Recuperados</div>
+                        <div class="stat-label"><?php _e('Ingresos Recuperados', 'woowapp-smsenlinea-pro'); ?></div>
                         <div class="stat-value">$<?php echo number_format($stats['recovered_revenue'], 2); ?></div>
                         <div class="stat-detail">
-                            Promedio: $<?php echo number_format($stats['avg_order_value'], 2); ?>
+                            <?php esc_html_e('Promedio:', 'woowapp-smsenlinea-pro'); ?> $<?php echo number_format($stats['avg_order_value'], 2); ?>
                         </div>
                     </div>
                 </div>
@@ -156,9 +156,9 @@ class WSE_Pro_Stats_Dashboard {
                 <div class="wse-stat-card">
                     <div class="stat-icon">⏱️</div>
                     <div class="stat-content">
-                        <div class="stat-label">Tiempo Promedio</div>
+                        <div class="stat-label"><?php _e('Tiempo Promedio', 'woowapp-smsenlinea-pro'); ?></div>
                         <div class="stat-value"><?php echo $stats['avg_recovery_time']; ?></div>
-                        <div class="stat-detail">Hasta recuperación</div>
+                        <div class="stat-detail"><?php _e('Hasta recuperación', 'woowapp-smsenlinea-pro'); ?></div>
                     </div>
                 </div>
             </div>
@@ -166,53 +166,56 @@ class WSE_Pro_Stats_Dashboard {
             <!-- Gráficos -->
             <div class="wse-charts-container">
                 <div class="wse-chart-card">
-                    <h3>📈 Conversiones por Día</h3>
+                    <h3><?php _e('📈 Conversiones por Día', 'woowapp-smsenlinea-pro'); ?></h3>
                     <canvas id="conversionsChart"></canvas>
                 </div>
                 
                 <div class="wse-chart-card">
-                    <h3>📊 Rendimiento por Mensaje</h3>
+                    <h3><?php _e('📊 Rendimiento por Mensaje', 'woowapp-smsenlinea-pro'); ?></h3>
                     <canvas id="messagesChart"></canvas>
                 </div>
             </div>
             
             <!-- Tabla de Eventos Recientes -->
             <div class="wse-events-table">
-                <h3>🕐 Actividad Reciente</h3>
+                <h3><?php _e('🕐 Actividad Reciente', 'woowapp-smsenlinea-pro'); ?></h3>
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
-                            <th>Fecha</th>
-                            <th>Carrito</th>
-                            <th>Evento</th>
-                            <th>Mensaje</th>
-                            <th>Teléfono</th>
-                            <th>Valor</th>
+                            <th><?php esc_html_e('Fecha', 'woowapp-smsenlinea-pro'); ?></th>
+                            <th><?php esc_html_e('Carrito', 'woowapp-smsenlinea-pro'); ?></th>
+                            <th><?php esc_html_e('Evento', 'woowapp-smsenlinea-pro'); ?></th>
+                            <th><?php esc_html_e('Mensaje', 'woowapp-smsenlinea-pro'); ?></th>
+                            <th><?php esc_html_e('Teléfono', 'woowapp-smsenlinea-pro'); ?></th>
+                            <th><?php esc_html_e('Valor', 'woowapp-smsenlinea-pro'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($stats['recent_events'] as $event): ?>
                         <tr>
-                            <td><?php echo date('Y-m-d H:i', strtotime($event->created_at)); ?></td>
-                            <td>#<?php echo $event->cart_id; ?></td>
+                            <td><?php echo esc_html(date('Y-m-d H:i', strtotime($event->created_at))); ?></td>
+                            <td>#<?php echo esc_html($event->cart_id); ?></td>
                             <td>
-                                <span class="event-badge event-<?php echo $event->event_type; ?>">
-                                    <?php echo $this->get_event_label($event->event_type); ?>
+                                <span class="event-badge event-<?php echo esc_attr($event->event_type); ?>">
+                                    <?php echo esc_html($this->get_event_label($event->event_type)); ?>
                                 </span>
                             </td>
                             <td>
                                 <?php if ($event->message_number > 0): ?>
-                                    Mensaje #<?php echo $event->message_number; ?>
+                                    <?php printf(
+                                        esc_html__('Mensaje #%d', 'woowapp-smsenlinea-pro'),
+                                        (int) $event->message_number
+                                    ); ?>
                                 <?php else: ?>
-                                    —
+                                    –
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo $this->format_phone($event->phone); ?></td>
+                            <td><?php echo esc_html($this->format_phone($event->phone)); ?></td>
                             <td>
                                 <?php if ($event->order_total): ?>
-                                    $<?php echo number_format($event->order_total, 2); ?>
+                                    $<?php echo esc_html(number_format((float) $event->order_total, 2)); ?>
                                 <?php else: ?>
-                                    —
+                                    –
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -223,7 +226,7 @@ class WSE_Pro_Stats_Dashboard {
             
             <!-- Datos para gráficos -->
             <script type="text/javascript">
-                var wsePro_chartData = <?php echo json_encode([
+                var wsePro_chartData = <?php echo wp_json_encode([
                     'conversions' => $stats['conversions_by_day'],
                     'messages' => $stats['messages_performance']
                 ]); ?>;
@@ -329,7 +332,7 @@ class WSE_Pro_Stats_Dashboard {
             $date_from, $date_to
         ));
         
-        $avg_recovery_time = $avg_time ? $this->format_time($avg_time) : '—';
+        $avg_recovery_time = $avg_time ? $this->format_time($avg_time) : '–';
         
         // Conversiones por día
         $conversions_by_day = $wpdb->get_results($wpdb->prepare(
@@ -374,7 +377,10 @@ class WSE_Pro_Stats_Dashboard {
             ));
             
             $messages_performance[] = [
-                'message' => "Mensaje {$i}",
+                'message' => sprintf(
+                    __('Mensaje %d', 'woowapp-smsenlinea-pro'),
+                    $i
+                ),
                 'sent' => $sent,
                 'clicks' => (int) $clicks,
                 'conversions' => (int) $conversions,
@@ -418,14 +424,25 @@ class WSE_Pro_Stats_Dashboard {
      */
     private function format_time($minutes) {
         if ($minutes < 60) {
-            return round($minutes) . ' min';
+            return sprintf(
+                __('%d min', 'woowapp-smsenlinea-pro'),
+                round($minutes)
+            );
         } elseif ($minutes < 1440) {
             $hours = floor($minutes / 60);
-            return $hours . 'h ' . round($minutes % 60) . 'm';
+            return sprintf(
+                __('%dh %dm', 'woowapp-smsenlinea-pro'),
+                $hours,
+                round($minutes % 60)
+            );
         } else {
             $days = floor($minutes / 1440);
             $hours = floor(($minutes % 1440) / 60);
-            return $days . 'd ' . $hours . 'h';
+            return sprintf(
+                __('%dd %dh', 'woowapp-smsenlinea-pro'),
+                $days,
+                $hours
+            );
         }
     }
     
@@ -434,9 +451,9 @@ class WSE_Pro_Stats_Dashboard {
      */
     private function get_event_label($type) {
         $labels = [
-            'sent' => '📤 Enviado',
-            'click' => '🔗 Click',
-            'conversion' => '🎉 Conversión'
+            'sent' => __('📤 Enviado', 'woowapp-smsenlinea-pro'),
+            'click' => __('🔗 Click', 'woowapp-smsenlinea-pro'),
+            'conversion' => __('🎉 Conversión', 'woowapp-smsenlinea-pro')
         ];
         return isset($labels[$type]) ? $labels[$type] : $type;
     }
