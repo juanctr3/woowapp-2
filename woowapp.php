@@ -2079,41 +2079,36 @@ final class WooWApp {
         if (isset($_GET['trigger_woowapp_cron']) && $_GET['trigger_woowapp_cron'] === 'process_carts' && isset($_GET['key'])) {
 
             // Obtener la clave secreta guardada en las opciones de WordPress
-            // Usamos una opción separada para la clave, generada en los ajustes
-            $stored_key = get_option('wse_pro_cron_secret_key', ''); // El valor por defecto es vacío
+            $stored_key = get_option('wse_pro_cron_secret_key', '');
 
             // Obtener la clave proporcionada en la URL y limpiarla
             $url_key = sanitize_text_field($_GET['key']);
 
             // Validar que la clave guardada no esté vacía y que ambas claves coincidan
-            // Usamos hash_equals para una comparación segura contra ataques de temporización
             if (!empty($stored_key) && hash_equals($stored_key, $url_key)) {
                 // La clave es válida
 
-                // Registramos en el log que se está ejecutando por esta vía
                 $this->log_info(__('Disparador de cron externo recibido y validado. Ejecutando procesamiento de carritos...', 'woowapp-smsenlinea-pro'));
 
                 // Ejecutamos la función principal que procesa los carritos
                 $this->process_abandoned_carts_cron();
 
-                // Opcional: Podrías añadir un mensaje simple y salir para que el servicio de cron no espere más
-                // header('Content-Type: text/plain');
-                // echo esc_html__('WooWApp Cron Triggered Successfully.', 'woowapp-smsenlinea-pro');
-                // exit;
+                // Añadir un mensaje simple y salir para que el servicio de cron no espere más
+                header('Content-Type: text/plain; charset=utf-8'); // Especificar charset UTF-8
+                echo esc_html__('WooWApp Cron Triggered Successfully.', 'woowapp-smsenlinea-pro');
+                exit; // Detener la ejecución aquí
 
             } else {
                 // Si la clave no coincide o no hay clave guardada
                 $this->log_warning(__('Se recibió un disparador de cron externo pero la clave no coincide o está vacía.', 'woowapp-smsenlinea-pro'));
-                // Opcional: Podrías enviar una cabecera de error
-                // status_header(403); // Forbidden
-                // echo esc_html__('Invalid or missing key.', 'woowapp-smsenlinea-pro');
-                // exit;
+                // Opcional: Enviar cabecera de error y salir
+                status_header(403); // Forbidden
+                header('Content-Type: text/plain; charset=utf-8');
+                echo esc_html__('Invalid or missing key.', 'woowapp-smsenlinea-pro');
+                exit; // Detener ejecución aquí también
             }
-             // Salir explícitamente después de manejar la petición para evitar carga innecesaria
-             // Nota: Esto podría interferir si la URL base '/' también es usada para otras cosas.
-             // Considera usar una URL base diferente si es necesario, ej. home_url('/?woowapp_action=cron&...')
-             // Si decides salir, descomenta las líneas 'exit;' de arriba. Por ahora, lo dejamos seguir.
         }
+        // Si los parámetros GET no coinciden, simplemente no hacemos nada y dejamos que WordPress continúe normalmente.
     }
 }
 
@@ -2223,3 +2218,4 @@ function handle_cart_capture() {
 // Inicializar el plugin
 
 WooWApp::get_instance();
+
