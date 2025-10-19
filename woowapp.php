@@ -1794,12 +1794,7 @@ public function debug_force_send_message($cart_id) {
         }
     }
 }
-
-/**
-     * PUNTO 3: Notifica al Admin cuando una nueva reseña queda pendiente.
-     * Se activa cuando se inserta un comentario.
-     */
-    public function notify_admin_on_pending_review($comment_id, $comment_object) {
+public function notify_admin_on_pending_review($comment_id, $comment_object) {
         // Verificar si es una reseña y si está pendiente (approved = 0)
         if ($comment_object->comment_type === 'review' && $comment_object->comment_approved == '0') {
             
@@ -1934,6 +1929,11 @@ public function debug_force_send_message($cart_id) {
              } // Fin if agradecimiento activado
         } // Fin if reseña aprobada
     }
+/**
+     * PUNTO 3: Notifica al Admin cuando una nueva reseña queda pendiente.
+     * Se activa cuando se inserta un comentario.
+     */
+    
 // Nueva función para manejar la captura de carrito sin duplicados
 add_action('wp_ajax_wse_pro_capture_cart', 'handle_cart_capture');
 add_action('wp_ajax_nopriv_wse_pro_capture_cart', 'handle_cart_capture');
@@ -2048,6 +2048,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
