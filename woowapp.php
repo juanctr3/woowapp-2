@@ -1476,11 +1476,21 @@ private function get_review_form_html() {
                     $html .= '<input type="hidden" name="product_id[' . esc_attr($item_id) . ']" value="' . esc_attr($product_id_for_review) . '" />';
 
                     $html .= '<p class="comment-form-rating">';
-                    $html .= '<label for="review_rating-' . esc_attr($item_id) . '">' . __('Tu calificación', 'woowapp-smsenlinea-pro') . '</label>'; // Quitamos el * de requerido
-                    // Dejar rating opcional si hay comentario, agregamos opción vacía
-                    $html .= '<select name="review_rating[' . esc_attr($item_id) . ']" id="review_rating-' . esc_attr($item_id) . '" style="width: auto;">';
-                    $html .= '<option value="">' . __('Selecciona...', 'woowapp-smsenlinea-pro') . '</option>'; // Opción vacía
-                    $html .= '<option value="5">⭐⭐⭐⭐⭐</option>';
+                    // Obtener la opción de si es requerido
+                    $is_rating_required = get_option('wse_pro_require_review_rating', 'no') === 'yes';
+                    // Añadir el span de requerido si la opción está activada
+                    $required_span = $is_rating_required ? '&nbsp;<span class="required">*</span>' : '';
+                    // Añadir el atributo required al select si la opción está activada
+                    $required_attr = $is_rating_required ? ' required' : '';
+
+                    $html .= '<label for="review_rating-' . esc_attr($item_id) . '">' . __('Tu calificación', 'woowapp-smsenlinea-pro') . $required_span . '</label>';
+                    $html .= '<select name="review_rating[' . esc_attr($item_id) . ']" id="review_rating-' . esc_attr($item_id) . '" style="width: auto;"' . $required_attr . '>'; // Añadido $required_attr
+                    // Quitamos la opción "Selecciona..." si es requerido, o la dejamos si no lo es
+                    if (!$is_rating_required) {
+                        $html .= '<option value="">' . __('Selecciona...', 'woowapp-smsenlinea-pro') . '</option>';
+                    }
+                    // Marcamos 5 estrellas como seleccionada por defecto
+                    $html .= '<option value="5" selected>⭐⭐⭐⭐⭐</option>';
                     $html .= '<option value="4">⭐⭐⭐⭐</option>';
                     $html .= '<option value="3">⭐⭐⭐</option>';
                     $html .= '<option value="2">⭐⭐</option>';
@@ -2210,6 +2220,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
