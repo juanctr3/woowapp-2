@@ -356,11 +356,12 @@ class WSE_Pro_Settings {
             ],
             [
                 'name' => '', // Sin etiqueta
-                'type' => 'button', // Usaremos el tipo botón que ya definimos
+                'type' => 'button',
                 'id' => 'wse_pro_regenerate_cron_key_button',
                 'class' => 'button-secondary',
                 'value' => __('🔄 Regenerar Clave Secreta', 'woowapp-smsenlinea-pro'),
-                'desc' => '<span id="regenerate_key_status" style="margin-left: 10px;"></span>' . wp_nonce_field('wse_regenerate_cron_key_action', 'wse_regenerate_cron_key_nonce', true, false) // Nonce para seguridad
+                'desc' => '<span id="regenerate_key_status" style="margin-left: 10px;"></span>', // Nonce quitado de aquí
+                'nonce_html' => wp_nonce_field('wse_regenerate_cron_key_action', 'wse_regenerate_cron_key_nonce', true, false) // Nonce movido aquí
             ],
             // === FIN: Cron Externo ===
             
@@ -1021,7 +1022,18 @@ class WSE_Pro_Settings {
                     class="<?php echo esc_attr($value['class']); ?>"
                 ><?php echo esc_html($value['value']); ?></button>
                 <?php echo $field_description['description']; ?>
-            </td>
+            <td class="forminp forminp-button">
+            <button
+                type="button"
+                id="<?php echo esc_attr($value['id']); ?>"
+                class="<?php echo esc_attr($value['class']); ?>"
+            ><?php echo esc_html($value['value']); ?></button>
+            <?php echo $field_description['description']; ?>
+            <?php // --- AÑADIR ESTA LÍNEA ---
+                  echo isset($value['nonce_html']) ? $value['nonce_html'] : '';
+            ?>
+        </td>
+			</td>
         </tr>
         <?php
     }
@@ -1183,5 +1195,6 @@ class WSE_Pro_Settings {
     ]);
 }
 }
+
 
 
