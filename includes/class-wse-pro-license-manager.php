@@ -320,9 +320,34 @@ class WSE_Pro_License_Manager {
 
 
     // Añadir enlace de ajustes en la página de plugins
+    /**
+     * Añade enlaces útiles (Ajustes, Licencia, Documentación) en la fila del plugin
+     * dentro de la página de Plugins instalados.
+     *
+     * @param array $links Array de enlaces existentes para el plugin.
+     * @return array Array de enlaces modificado.
+     */
     public function add_settings_link($links) {
-        $settings_link = '<a href="' . esc_url(admin_url('options-general.php?page=' . $this->page_slug)) . '">' . __('Ajustes de Licencia', 'woowapp-smsenlinea-pro') . '</a>';
-        array_unshift($links, $settings_link); // Añadir al principio de la lista
+        // 1. Enlace a los Ajustes Principales de WooWApp (dentro de WooCommerce)
+        $main_settings_url = admin_url('admin.php?page=wc-settings&tab=woowapp');
+        $main_settings_link = '<a href="' . esc_url($main_settings_url) . '">' . esc_html__('Ajustes', 'woowapp-smsenlinea-pro') . '</a>';
+
+        // 2. Enlace a la Página de Licencia (Ajustes > WooWApp Pro Licencia)
+        $license_settings_url = admin_url('options-general.php?page=' . $this->page_slug);
+        // Usamos un texto más corto para el enlace
+        $license_settings_link = '<a href="' . esc_url($license_settings_url) . '">' . esc_html__('Licencia', 'woowapp-smsenlinea-pro') . '</a>';
+
+        // 3. Enlace a la Documentación Externa
+        $docs_url = 'https://descargas.smsenlinea.com/documentaciones/woowapp.php';
+        $docs_link = '<a href="' . esc_url($docs_url) . '" target="_blank">' . esc_html__('Documentación', 'woowapp-smsenlinea-pro') . '</a>';
+
+        // Añadir los nuevos enlaces al PRINCIPIO del array $links
+        // El orden aquí determina el orden visual (de izquierda a derecha)
+        array_unshift($links, $docs_link); // Documentación primero a la derecha
+        array_unshift($links, $license_settings_link); // Licencia en medio
+        array_unshift($links, $main_settings_link); // Ajustes primero a la izquierda
+
+        // Devolver el array modificado
         return $links;
     }
 }
