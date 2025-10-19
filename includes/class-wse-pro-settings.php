@@ -511,6 +511,15 @@ class WSE_Pro_Settings {
             
             ['type' => 'sectionend', 'id' => 'wse_pro_review_reminders_end'],
 
+            // Nueva opción para hacer obligatoria la calificación
+        [
+            'name' => __('¿Calificación obligatoria?', 'woowapp-smsenlinea-pro'),
+            'type' => 'checkbox',
+            'id' => 'wse_pro_require_review_rating',
+            'desc' => __('<strong>Marcar si la selección de estrellas es obligatoria para enviar la reseña.</strong>', 'woowapp-smsenlinea-pro'),
+            'default' => 'no' // Por defecto, no es obligatoria
+        ],
+        
             // === INICIO NUEVA SECCIÓN: RECOMPENSA POR RESEÑA ===
             [
                 'name' => __('🎁 Recompensa por Reseña', 'woowapp-smsenlinea-pro'),
@@ -992,3 +1001,4 @@ class WSE_Pro_Settings {
         ]);
     }
 }
+
