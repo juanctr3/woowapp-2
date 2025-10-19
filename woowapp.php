@@ -494,6 +494,9 @@ final class WooWApp {
 add_action('wse_pro_send_abandoned_cart_1', [$this, 'debug_force_send_message'], 10, 1);
 add_action('wse_pro_send_abandoned_cart_2', [$this, 'debug_force_send_message'], 10, 1);
 add_action('wse_pro_send_abandoned_cart_3', [$this, 'debug_force_send_message'], 10, 1);
+// Hooks para la nueva lógica de reseñas
+        add_action('wp_insert_comment', [$this, 'notify_admin_on_pending_review'], 99, 2);
+        add_action('transition_comment_status', [$this, 'send_reward_on_review_approval'], 99, 3);
     }
 
     /**
@@ -1904,6 +1907,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
