@@ -456,6 +456,12 @@ class WSE_Pro_Placeholders {
                 '{first_product_review_link}', 
                 '{product_image_url}'
             ],
+            __('Reseñas', 'woowapp-smsenlinea-pro') => [ // Nuevo grupo
+            '{review_rating}',          // La calificación (ej. 5)
+            '{review_content}',         // El texto de la reseña
+            '{review_moderation_link}', // Enlace para aprobar (útil en mensaje admin)
+            '{first_product_review_link}', // Enlace a la página de reseña (ya existía)
+            ],            
             __('Carrito Abandonado - General', 'woowapp-smsenlinea-pro') => [
                 '{cart_total}',
                 '{cart_total_raw}',
@@ -589,3 +595,4 @@ class WSE_Pro_Placeholders {
         ];
     }
 }
+
