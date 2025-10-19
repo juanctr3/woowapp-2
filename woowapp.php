@@ -2264,6 +2264,94 @@ function handle_cart_capture() {
 // Inicializar el plugin
 
 WooWApp::get_instance();
+/**
+ * Inicializa el gestor de licencias y el sistema de actualizaciones (según Nueva Doc).
+ * Se ejecuta después de que el plugin principal se haya cargado.
+ */
+function wse_pro_initialize_licensing_updater() {
+    // Incluir archivos SÓLO si no existen las clases (más seguro)
+    if (!class_exists('WSE_Pro_License_Manager')) {
+        // Asegurarse de que la constante WSE_PRO_PATH esté definida antes de usarla
+        if (defined('WSE_PRO_PATH')) {
+            require_once WSE_PRO_PATH . 'includes/class-wse-pro-license-manager.php';
+        } else {
+             // Manejar error si la constante no está definida (debería estarlo)
+             error_log('WooWApp Error: WSE_PRO_PATH constant not defined when trying to include License Manager.');
+             return;
+        }
+    }
+    if (!class_exists('WSE_Pro_Auto_Updater')) {
+         if (defined('WSE_PRO_PATH')) {
+            require_once WSE_PRO_PATH . 'includes/class-wse-pro-updater.php';
+         } else {
+             error_log('WooWApp Error: WSE_PRO_PATH constant not defined when trying to include Updater.');
+             return;
+         }
+    }
+
+    // Verificar que las constantes necesarias estén definidas
+    if (!defined('WSE_PRO_PUBLIC_SLUG') || !defined('WSE_PRO_UPDATE_ID') || !defined('WSE_PRO_FILE') || !defined('WSE_PRO_VERSION')) {
+         error_log('WooWApp Error: Required constants (SLUG, UPDATE_ID, FILE, VERSION) not defined for licensing/updater.');
+         return;
+    }
+
+
+    // Instanciar siempre el gestor de licencias con el SLUG PÚBLICO
+    // Verificar que la clase exista antes de instanciarla
+    if (class_exists('WSE_Pro_License_Manager')) {
+        new WSE_Pro_License_Manager(WSE_PRO_PUBLIC_SLUG);
+    } else {
+         error_log('WooWApp Error: WSE_Pro_License_Manager class not found.');
+         return; // Salir si la clase no se pudo cargar
+    }
+
+    // Obtener la licencia y el estado guardados
+    $license_key = get_option('wse_pro_license_key');
+    $license_status = get_option('wse_pro_license_status');
+
+    // Solo inicializar el actualizador si la licencia está activa y no está vacía
+    if ($license_status === 'active' && !empty($license_key)) {
+         // Verificar que la clase exista antes de instanciarla
+         if (class_exists('WSE_Pro_Auto_Updater')) {
+            new WSE_Pro_Auto_Updater(
+                WSE_PRO_FILE,        // Ruta al archivo principal
+                WSE_PRO_UPDATE_ID,   // Identificador ÚNICO para actualizaciones
+                WSE_PRO_VERSION,     // Versión actual del plugin
+                $license_key         // Clave de licencia activa
+            );
+         } else {
+             error_log('WooWApp Error: WSE_Pro_Auto_Updater class not found.');
+         }
+    }
+}
+// Ejecutar la inicialización en 'plugins_loaded' con prioridad 20
+add_action('plugins_loaded', 'wse_pro_initialize_licensing_updater', 20);
+
+/**
+ * Función auxiliar para comprobar si la licencia está activa.
+ * Útil para bloquear funcionalidades premium si decides implementarlas.
+ */
+function wse_pro_is_license_active() {
+    return get_option('wse_pro_license_status') === 'active';
+}
+
+// Ejemplo de cómo proteger una funcionalidad (puedes añadir esto donde cargues funciones específicas):
+/*
+if ( wse_pro_is_license_active() ) {
+    // Cargar aquí las funcionalidades que requieren licencia activa
+    // require_once WSE_PRO_PATH . 'includes/premium-feature.php';
+} else {
+    // Opcional: Mostrar un aviso si la licencia no está activa
+    // add_action('admin_notices', 'wse_pro_show_license_inactive_notice');
+}
+function wse_pro_show_license_inactive_notice() {
+    ?>
+    <div class="notice notice-warning">
+        <p><?php printf( __('La licencia de WooWApp Pro no está activa. <a href="%s">Actívala aquí</a> para recibir actualizaciones.', 'woowapp-smsenlinea-pro'), esc_url(admin_url('options-general.php?page=wse-pro-license')) ); ?></p>
+    </div>
+    <?php
+}
+*/
 
 
 
