@@ -1164,22 +1164,24 @@ class WSE_Pro_Settings {
      * Manejador AJAX para regenerar la clave secreta del cron.
      */
     public function ajax_regenerate_cron_key() {
-        // Verificar nonce y permisos
-        check_ajax_referer('wse_regenerate_cron_key_action', 'nonce');
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error(['message' => esc_html__('No tienes permisos.', 'woowapp-smsenlinea-pro')]);
-        }
+    // Verificar nonce y permisos
+    check_ajax_referer('wse_regenerate_cron_key_action', 'nonce'); // <-- ESTO ES LO CORRECTO
 
-        // Regenerar la clave
-        $new_key = self::regenerate_cron_secret_key();
-        $new_url = self::get_cron_trigger_url(); // Obtener la URL con la nueva clave
-
-        // Devolver la nueva clave y URL para actualizar la interfaz
-        wp_send_json_success([
-            'new_key' => $new_key,
-            'new_url' => $new_url,
-            'message' => esc_html__('¡Nueva clave generada!', 'woowapp-smsenlinea-pro')
-        ]);
+    if (!current_user_can('manage_woocommerce')) {
+        wp_send_json_error(['message' => esc_html__('No tienes permisos.', 'woowapp-smsenlinea-pro')]);
     }
+
+    // Regenerar la clave
+    $new_key = self::regenerate_cron_secret_key();
+    $new_url = self::get_cron_trigger_url(); // Obtener la URL con la nueva clave
+
+    // Devolver la nueva clave y URL para actualizar la interfaz
+    wp_send_json_success([
+        'new_key' => $new_key,
+        'new_url' => $new_url,
+        'message' => esc_html__('¡Nueva clave generada!', 'woowapp-smsenlinea-pro')
+    ]);
 }
+}
+
 
