@@ -1,0 +1,1359 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WooWApp\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-19 15:29+0000\n"
+"PO-Revision-Date: 2025-10-19 15:48+0000\n"
+"Last-Translator: \n"
+"Language-Team: English (United States)\n"
+"Language: en_US\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.8.0; wp-6.8.3; php-8.3.25\n"
+"X-Domain: woowapp-smsenlinea-pro\n"
+
+#: includes/class-wse-pro-coupon-manager.php:436
+msgid " en pedido #%d"
+msgstr " on order #%d"
+
+#: includes/class-wse-pro-stats-dashboard.php:428
+msgid "%d min"
+msgstr "%d min"
+
+#: includes/class-wse-pro-stats-dashboard.php:442
+msgid "%dd %dh"
+msgstr "%dd %dh"
+
+#: includes/class-wse-pro-stats-dashboard.php:434
+msgid "%dh %dm"
+msgstr "%dh %dm"
+
+#: includes/class-wse-pro-settings.php:823
+msgid "(Base del código, ej: DESCUENTO, PROMO)"
+msgstr "(Code basis, e.g. DISCOUNT, PROMO)"
+
+#: includes/class-wse-pro-settings.php:852
+msgid "(Ej: 10 para 10% o $10)"
+msgstr "(Ex: 10 for 10% o $10)"
+
+#: includes/class-wse-pro-field-detector.php:184
+#, php-format
+msgid "- %s: %s"
+msgstr "- %s: %s"
+
+#: includes/class-wse-pro-settings.php:305
+msgid "<strong>Activa para adjuntar imagen.</strong> (Solo WhatsApp)"
+msgstr "<strong>Activate to attach image.</strong> (WhatsApp only)"
+
+#: includes/class-wse-pro-settings.php:534
+msgid "<strong>Activar mensaje de agradecimiento automático.</strong>"
+msgstr "<strong>Activate automatic thank you message.</strong>"
+
+#: includes/class-wse-pro-settings.php:625
+msgid "<strong>Activar sistema de recuperación.</strong>"
+msgstr "<strong>Activate recovery system.</strong>"
+
+#: includes/class-wse-pro-settings.php:492
+msgid "<strong>Activar solicitudes automáticas.</strong>"
+msgstr "<strong>Enable automatic requests.</strong>"
+
+#: includes/class-wse-pro-settings.php:683
+msgid "<strong>Enviar mensaje #%d</strong>"
+msgstr "<strong>Send message #%d</strong>"
+
+#: includes/class-wse-pro-settings.php:549
+msgid ""
+"<strong>Generar y enviar un cupón si la reseña cumple el mínimo de estrellas."
+"</strong>"
+msgstr ""
+"<strong>Generate and send a coupon if the review meets the minimum number of "
+"stars.</strong>"
+
+#: includes/class-wse-pro-settings.php:519
+msgid ""
+"<strong>Marcar si la selección de estrellas es obligatoria para enviar la "
+"reseña.</strong>"
+msgstr ""
+"<strong>Check if star selection is required to submit the review.</strong>"
+
+#: includes/class-wse-pro-field-detector.php:318
+msgid "Acción"
+msgstr "Action"
+
+#: includes/class-wse-pro-settings.php:531
+msgid "Activar agradecimiento por reseña"
+msgstr "Enable Review Appreciation"
+
+#: includes/class-wse-pro-settings.php:546
+msgid "Activar cupón de recompensa"
+msgstr "Activate Reward Coupon"
+
+#: includes/class-wse-pro-settings.php:680
+msgid "Activar este mensaje"
+msgstr "Activate this message"
+
+#: includes/class-wse-pro-settings.php:402
+msgid "Activar notificación de reseña pendiente"
+msgstr "Enable pending review notification"
+
+#: includes/class-wse-pro-settings.php:377
+#: includes/class-wse-pro-settings.php:456
+#, php-format
+msgid "Activar para: %s"
+msgstr "Activate for: %s"
+
+#: includes/class-wse-pro-settings.php:489
+msgid "Activar recordatorio de reseña"
+msgstr "Enable Review Reminder"
+
+#: includes/class-wse-pro-settings.php:622
+msgid "Activar recuperación de carrito"
+msgstr "Enable Cart Recovery"
+
+#: includes/class-wse-pro-settings.php:309
+msgid "Activar Registro de Actividad (Log)"
+msgstr "Enable Activity Log"
+
+#: includes/class-wse-pro-server-compatibility.php:373
+#: includes/class-wse-pro-server-compatibility.php:394
+#: includes/class-wse-pro-server-compatibility.php:414
+msgid "Activo"
+msgstr "Active"
+
+#: includes/class-wse-pro-settings.php:302
+msgid "Adjuntar Imagen de Producto (Pedidos)"
+msgstr "Attach Product Image (Orders)"
+
+#: includes/class-wse-pro-settings.php:629
+msgid "Adjuntar imagen del primer producto"
+msgstr "Attach image of the first product"
+
+#: includes/class-wse-pro-api-handler.php:330
+msgid "Admin"
+msgstr "Admin"
+
+#: includes/class-wse-pro-settings.php:54
+msgid "Administración"
+msgstr "Administration"
+
+#: includes/class-wse-pro-settings.php:197
+msgid "Ajustes de API y Generales"
+msgstr "API and General Settings"
+
+#: includes/class-wse-pro-placeholders.php:565
+msgid "Animales y Naturaleza"
+msgstr "Animals and Nature"
+
+#: includes/class-wse-pro-field-detector.php:327
+msgid "Apellido"
+msgstr "Last Name"
+
+#: includes/class-wse-pro-settings.php:208
+msgid "API Panel 1 (SMS y WhatsApp Clásico)"
+msgstr "API Panel 1 (SMS and WhatsApp Classic)"
+
+#: includes/class-wse-pro-settings.php:207
+msgid "API Panel 2 (WhatsApp QR)"
+msgstr "API Panel 2 (WhatsApp QR)"
+
+#: includes/class-wse-pro-settings.php:238
+msgid "API Secret (Panel 1)"
+msgstr "API Secret (Panel 1)"
+
+#: includes/class-wse-pro-server-compatibility.php:446
+msgid "Base de Datos"
+msgstr "Database"
+
+#: includes/class-wse-pro-settings.php:597
+msgid "Base para el código del cupón, ej: GRACIAS"
+msgstr "Basis for coupon code, e.g. THANK YOU"
+
+#: includes/class-wse-pro-field-detector.php:316
+msgid "Campo"
+msgstr "Field"
+
+#: includes/class-wse-pro-settings.php:841
+msgid "Cantidad de descuento:"
+msgstr "Discount Amount:"
+
+#: includes/class-wse-pro-settings.php:577
+msgid "Cantidad del Descuento (Cupón)"
+msgstr "Discount Amount (Coupon)"
+
+#: includes/class-wse-pro-placeholders.php:102
+msgid "Cantidad:"
+msgstr "Quantity:"
+
+#: includes/class-wse-pro-placeholders.php:500
+msgid "Caras y Emociones"
+msgstr "Faces and Emotions"
+
+#: includes/class-wse-pro-stats-dashboard.php:186
+msgid "Carrito"
+msgstr "Cart"
+
+#: includes/class-wse-pro-placeholders.php:479
+msgid "Carrito Abandonado - Enlaces"
+msgstr "Abandoned Cart - Links"
+
+#: includes/class-wse-pro-placeholders.php:465
+msgid "Carrito Abandonado - General"
+msgstr "Abandoned Cart - General"
+
+#: includes/class-wse-pro-placeholders.php:472
+msgid "Carrito Abandonado - Productos"
+msgstr "Abandoned Cart - Products"
+
+#: includes/class-wse-pro-stats-dashboard.php:101
+msgid "Carritos Abandonados"
+msgstr "Abandoned Carts"
+
+#: includes/class-wse-pro-placeholders.php:593
+msgid "Celebraciones y Eventos"
+msgstr "Celebrations & Events"
+
+#: includes/class-wse-pro-field-detector.php:408
+msgid "Cerrar"
+msgstr "Close"
+
+#: includes/class-wse-pro-server-compatibility.php:451
+msgid "Charset"
+msgstr "Charset"
+
+#: includes/class-wse-pro-field-detector.php:329
+msgid "Ciudad"
+msgstr "City"
+
+#: includes/class-wse-pro-stats-dashboard.php:126
+msgid "Clicks en Enlaces"
+msgstr "Clicks on Links"
+
+#: includes/class-wse-pro-placeholders.php:439
+#: includes/class-wse-pro-api-handler.php:330
+msgid "Cliente"
+msgstr "Client"
+
+#: includes/class-wse-pro-placeholders.php:520
+msgid "Comercio y Compras"
+msgstr "Trade and Purchasing"
+
+#: includes/class-wse-pro-placeholders.php:575
+msgid "Comida y Bebida"
+msgstr "Food & Drink"
+
+#: includes/class-wse-pro-settings.php:619
+msgid ""
+"Configura hasta 3 mensajes progresivos con descuentos crecientes para "
+"recuperar ventas."
+msgstr ""
+"Set up to 3 progressive messages with increasing discounts to recover sales."
+
+#: includes/class-wse-pro-field-detector.php:279
+msgid "Configuración de Campos - WooWApp"
+msgstr "Field Configuration - WooWApp"
+
+#: includes/class-wse-pro-server-compatibility.php:471
+msgid "Configuración de WooWApp"
+msgstr "WooWApp Configuration"
+
+#: includes/class-wse-pro-stats-dashboard.php:137
+msgid "Conversiones"
+msgstr "Conversions"
+
+#: includes/class-wse-pro-settings.php:243
+#, php-format
+msgid "Copia tu API Secret desde <a href=\"%s\" target=\"_blank\">Panel 1</a>."
+msgstr ""
+"Copy your Secret API from <a href=\"%s\" target=\"_blank\">Panel 1</a>."
+
+#: includes/class-wse-pro-stats-dashboard.php:129
+msgid "CTR:"
+msgstr "CTR:"
+
+#: includes/class-wse-pro-placeholders.php:484
+msgid "Cupones de Descuento"
+msgstr "Discount Coupons"
+
+#: includes/class-wse-pro-coupon-manager.php:267
+#, php-format
+msgid "Cupón automático generado por WooWApp - %s (Mensaje #%d)"
+msgstr "Auto Coupon Generated by WooWApp - %s (Message #%d)"
+
+#: includes/class-wse-pro-coupon-manager.php:348
+#, php-format
+msgid "Cupón encontrado para carrito #%d: %s"
+msgstr "Coupon found for cart #%d: %s"
+
+#: includes/class-wse-pro-coupon-manager.php:358
+msgid "Cupón existe en BD pero no en WooCommerce"
+msgstr "Coupon exists in BD but not in WooCommerce"
+
+#: includes/class-wse-pro-coupon-manager.php:187
+#, php-format
+msgid "Cupón generado: %s para carrito #%d, mensaje #%d"
+msgstr "Coupon Generated: %s for Cart #%d, Message #%d"
+
+#: includes/class-wse-pro-coupon-manager.php:431
+#, php-format
+msgid "Cupón marcado como usado: %s"
+msgstr "Coupon marked as used: %s"
+
+#: includes/class-wse-pro-settings.php:295
+msgid "Código de País Predeterminado"
+msgstr "Default Country Code"
+
+#: includes/class-wse-pro-field-detector.php:331
+msgid "Código Postal"
+msgstr "Postal Code"
+
+#: includes/class-wse-pro-server-compatibility.php:392
+msgid "Debug"
+msgstr "Debug"
+
+#: includes/class-wse-pro-settings.php:695
+msgid ""
+"Define cuánto tiempo esperar después de que el cliente abandone el carrito."
+msgstr "Define how long to wait after the customer abandons the cart."
+
+#: includes/class-wse-pro-settings.php:357
+msgid "Define números y mensajes para administradores."
+msgstr "Set numbers and messages for admins."
+
+#: includes/class-wse-pro-placeholders.php:585
+msgid "Deporte y Actividades"
+msgstr "Sport & Activities"
+
+#: includes/class-wse-pro-server-compatibility.php:394
+msgid "Desactivo"
+msgstr "Off"
+
+#: includes/class-wse-pro-server-compatibility.php:323
+msgid "Detectado"
+msgstr "Detected"
+
+#: includes/class-wse-pro-field-detector.php:398
+msgid "Detectar Automáticamente"
+msgstr "Automatically detect"
+
+#: includes/class-wse-pro-settings.php:284
+msgid "Device / Gateway ID (Panel 1)"
+msgstr "Device / Gateway ID (Panel 1)"
+
+#: includes/class-wse-pro-settings.php:278
+msgid "devices=Android; credits=gateway."
+msgstr "devices=Android; credits=gateway."
+
+#: includes/class-wse-pro-server-compatibility.php:235
+msgid "Diagnóstico de Servidor - WooWApp"
+msgstr "Server Diagnostics - WooWApp"
+
+#: includes/class-wse-pro-placeholders.php:449
+msgid "Direcciones"
+msgstr "Addresses"
+
+#: includes/class-wse-pro-field-detector.php:328
+msgid "Dirección"
+msgstr "Address"
+
+#: includes/class-wse-pro-settings.php:767
+msgid "Días"
+msgstr "Days"
+
+#: includes/class-wse-pro-settings.php:869
+msgid "días"
+msgstr "days"
+
+#: includes/class-wse-pro-settings.php:500
+msgid "días desde \"Completado\"."
+msgstr "days from \"Completed\"."
+
+#: includes/class-wse-pro-settings.php:582
+msgid "Ej: 10 para 10% o $10."
+msgstr "Ex: 10 for 10% o $10."
+
+#: includes/class-wse-pro-settings.php:298
+msgid "Ej: 57 para Colombia."
+msgstr "Ex: 57 for Colombia."
+
+#: includes/class-wse-pro-settings.php:333
+msgid "Ej: 573001234567"
+msgstr "Ex: 573001234567"
+
+#: includes/class-wse-pro-server-compatibility.php:346
+msgid "Ejecución Máxima"
+msgstr "Maximum Execution"
+
+#: includes/class-wse-pro-settings.php:564
+msgid ""
+"El cliente recibirá el cupón solo si su calificación es igual o mayor a esta."
+msgstr ""
+"The customer will receive the coupon only if their rating is equal to or "
+"greater than this."
+
+#: includes/class-wse-pro-settings.php:881
+#, php-format
+msgid "El código generado será: <code>%s-ABC123</code> (donde ABC123 es único)"
+msgstr ""
+"The code generated will be: <code><0></0>-ABC123</code> (where ABC123 is "
+"unique)"
+
+#: includes/class-wse-pro-server-compatibility.php:483
+msgid "El plugin se adapta automáticamente a Apache y Nginx"
+msgstr "The plugin automatically adapts to Apache and Nginx"
+
+#: includes/class-wse-pro-settings.php:210
+msgid "Elige el panel de SMSenlinea que deseas utilizar."
+msgstr "Choose the SMSenlinea panel you want to use."
+
+#: includes/class-wse-pro-field-detector.php:324
+msgid "Email"
+msgstr "Email"
+
+#: includes/class-wse-pro-settings.php:937
+msgid "Emojis:"
+msgstr "Emojis:"
+
+#: includes/class-wse-pro-server-compatibility.php:341
+msgid "Encontrado"
+msgstr "Found"
+
+#: includes/class-wse-pro-api-handler.php:375
+msgid "Enviado exitosamente."
+msgstr "Successfully shipped."
+
+#: includes/class-wse-pro-settings.php:496
+msgid "Enviar después de"
+msgstr "Send after"
+
+#: includes/class-wse-pro-settings.php:340
+msgid "Enviar Mensaje de Prueba"
+msgstr "Send Test Message"
+
+#: includes/class-wse-pro-settings.php:528
+msgid ""
+"Envía un mensaje de agradecimiento y opcionalmente un cupón después de que "
+"un cliente deje una reseña."
+msgstr ""
+"Send a thank you message and optionally a coupon after a customer leaves a "
+"review."
+
+#: includes/class-wse-pro-settings.php:486
+msgid "Envía un mensaje para incentivar reseñas."
+msgstr "Send a message to encourage reviews."
+
+#: includes/class-wse-pro-api-handler.php:167
+msgid "Envío (Panel 1) cancelado: Falta API Secret."
+msgstr "Send (Panel 1) cancelled: API Secret is missing."
+
+#: includes/class-wse-pro-api-handler.php:246
+msgid "Envío (Panel 2) cancelado: Faltan credenciales."
+msgstr "Submission (Panel 2) cancelled: Credentials are missing."
+
+#: includes/class-wse-pro-api-handler.php:142
+msgid "Envío cancelado: Número de teléfono o mensaje vacío."
+msgstr "Shipment cancelled: Phone number or empty message."
+
+#: includes/class-wse-pro-coupon-manager.php:294
+msgid "Error al crear cupón en WooCommerce"
+msgstr "Error creating coupon in WooCommerce"
+
+#: includes/class-wse-pro-coupon-manager.php:174
+msgid "Error al registrar cupón en BD"
+msgstr "Failed to register coupon in DB"
+
+#: includes/class-wse-pro-coupon-manager.php:180
+msgid "Error al registrar el cupón"
+msgstr "Error registering coupon"
+
+#: includes/class-wse-pro-api-handler.php:380
+msgid "Error desconocido"
+msgstr "Unknown error"
+
+#: includes/class-wse-pro-api-handler.php:342
+#, php-format
+msgid "Error WhatsApp (%s): %s"
+msgstr "WhatsApp error (%s): %s"
+
+#: includes/class-wse-pro-api-handler.php:248
+msgid "Error WhatsApp: Faltan credenciales de API Panel 2."
+msgstr "WhatsApp error: Missing API credentials Panel 2."
+
+#: includes/class-wse-pro-server-compatibility.php:412
+msgid "Estado"
+msgstr "Status"
+
+#: includes/class-wse-pro-field-detector.php:330
+msgid "Estado/Provincia"
+msgstr "State/Province"
+
+#: includes/class-wse-pro-stats-dashboard.php:31
+msgid "Estadísticas WooWApp"
+msgstr "WooWApp Statistics"
+
+#: includes/class-wse-pro-settings.php:553
+msgid "Estrellas mínimas para cupón"
+msgstr "Minimum stars for coupon"
+
+#: includes/class-wse-pro-stats-dashboard.php:187
+msgid "Evento"
+msgstr "Event"
+
+#: includes/class-wse-pro-server-compatibility.php:459
+msgid "Existe"
+msgstr "Exists"
+
+#: includes/class-wse-pro-api-handler.php:388
+#, php-format
+msgid "Fallo (Ref: %s, Tel: %s, Dest: %s). Razón: %s"
+msgstr "Judgment (Ref: %s, Tel: %s, Dest: %s). Reason: %s"
+
+#: includes/class-wse-pro-api-handler.php:382
+#, php-format
+msgid "Fallo al enviar WhatsApp a %s (%s). Razón: %s"
+msgstr "Failed to send WhatsApp to %s (%s). Reason: %s"
+
+#: includes/class-wse-pro-api-handler.php:335
+#, php-format
+msgid "Fallo API (Ref: %s, Dest: %s). Error: %s"
+msgstr "API Failure (Ref: %s, Dest: %s). Error: %s"
+
+#: includes/class-wse-pro-api-handler.php:168
+msgid "Falta el API Secret del Panel 1."
+msgstr "The Secret API from Panel 1 is missing."
+
+#: includes/class-wse-pro-api-handler.php:211
+msgid "Falta el Device / Gateway ID."
+msgstr "The Device/Gateway ID is missing."
+
+#: includes/class-wse-pro-api-handler.php:179
+msgid "Falta el WhatsApp Account ID."
+msgstr "The WhatsApp Account ID is missing."
+
+#: includes/class-wse-pro-api-handler.php:250
+msgid "Faltan credenciales de API Panel 2."
+msgstr "Missing API Panel 2 credentials."
+
+#: includes/class-wse-pro-stats-dashboard.php:185
+msgid "Fecha"
+msgstr "Date"
+
+#: includes/class-wse-pro-placeholders.php:510
+msgid "Gestos y Personas"
+msgstr "Gestures and Persons"
+
+#: includes/class-wse-pro-coupon-manager.php:319
+msgid "get_latest_coupon_for_cart: cart_id inválido"
+msgstr "get_latest_coupon_for_cart: cart_id Invalid"
+
+#: includes/class-wse-pro-field-detector.php:393
+msgid "Guardar Configuración Personalizada"
+msgstr "Save Custom Settings"
+
+#: includes/class-wse-pro-stats-dashboard.php:161
+msgid "Hasta recuperación"
+msgstr "Until recovery"
+
+#: includes/class-wse-pro-settings.php:439
+msgid "Hola {customer_name}, nueva nota en #{order_id}: {note_content}"
+msgstr "Hi {customer_name}, new note in #{order_id}: {note_content}"
+
+#: includes/class-wse-pro-settings.php:448
+#, php-format
+msgid "Hola {customer_name}, tu pedido #{order_id} cambió a: %s. ¡Gracias!"
+msgstr "Hi {customer_name}, your order #{order_id} changed to: %s. Thank you!"
+
+#: includes/class-wse-pro-settings.php:766
+msgid "Horas"
+msgstr "Hours"
+
+#: includes/class-wse-pro-server-compatibility.php:441
+msgid "Host"
+msgstr "Host"
+
+#. URI of the plugin
+#. Author URI of the plugin
+msgid "https://smsenlinea.com"
+msgstr "https://smsenlinea.com"
+
+#: includes/class-wse-pro-settings.php:288
+msgid "ID de tu dispositivo o gateway."
+msgstr "ID of your device or gateway."
+
+#: includes/class-wse-pro-settings.php:266
+msgid "ID único de tu cuenta de WhatsApp."
+msgstr "Unique ID of your WhatsApp account."
+
+#: includes/class-wse-pro-server-compatibility.php:428
+msgid "ID: %d"
+msgstr "ID: %d"
+
+#: includes/class-wse-pro-server-compatibility.php:373
+#: includes/class-wse-pro-server-compatibility.php:414
+msgid "Inactivo"
+msgstr "Inactive"
+
+#: includes/class-wse-pro-settings.php:805
+msgid "Incluir cupón de descuento en este mensaje"
+msgstr "Include discount coupon in this message"
+
+#: includes/class-wse-pro-settings.php:632
+msgid "Incluir imagen en mensajes."
+msgstr "Include image in messages."
+
+#: includes/class-wse-pro-settings.php:231
+msgid "Incluye el código de país. Ej: 5211234567890."
+msgstr "Include the country code. Ex: 5211234567890."
+
+#: includes/class-wse-pro-settings.php:222
+#, php-format
+msgid ""
+"Ingresa el token de tu instancia. Inicia sesión en <a href=\"%s\" "
+"target=\"_blank\">Panel 2</a>."
+msgstr ""
+"Enter your instance's token. Sign in to <a href=\"%s\" target=\"_blank\">"
+"Panel 2</a>."
+
+#: includes/class-wse-pro-field-detector.php:377
+msgid "Ingresa selectores separados por saltos de línea. Ej: #billing_phone"
+msgstr "Enter selectors separated by line breaks. Ex: #billing_phone"
+
+#: includes/class-wse-pro-stats-dashboard.php:148
+msgid "Ingresos Recuperados"
+msgstr "Recovered Revenue"
+
+#: includes/class-wse-pro-coupon-manager.php:130
+msgid "La cantidad de descuento debe ser mayor a 0"
+msgstr "The discount amount must be greater than 0"
+
+#: includes/class-wse-pro-coupon-manager.php:628
+msgid "Limpieza automática: %d cupones expirados eliminados"
+msgstr "Automatic cleaning: %d expired coupons removed"
+
+#: includes/class-wse-pro-field-detector.php:298
+msgid ""
+"Los campos se detectan automáticamente. Si quieres personalizarlos, puedes "
+"editar los selectores CSS aquí."
+msgstr ""
+"Fields are automatically detected. If you want to customize them, you can "
+"edit the CSS selectors here."
+
+#: includes/class-wse-pro-server-compatibility.php:484
+msgid "Los datos se capturan con múltiples métodos (fallback automático)"
+msgstr "Data is captured with multiple methods (automatic fallback)"
+
+#: includes/class-wse-pro-server-compatibility.php:351
+msgid "Límite de Memoria"
+msgstr "Memory Limit"
+
+#: includes/class-wse-pro-stats-dashboard.php:188
+msgid "Mensaje"
+msgstr "Message"
+
+#: includes/class-wse-pro-stats-dashboard.php:206
+msgid "Mensaje #%d"
+msgstr "Message #%d"
+
+#: includes/class-wse-pro-stats-dashboard.php:381
+msgid "Mensaje %d"
+msgstr "Message %d"
+
+#: includes/class-wse-pro-api-handler.php:375
+msgid "Mensaje encolado para envío."
+msgstr "Message queued for sending."
+
+#: includes/class-wse-pro-settings.php:607
+msgid ""
+"Mensaje mostrado al cliente tras enviar la reseña. Usa <code>%d</code> donde "
+"quieras mostrar el número de reseñas enviadas."
+msgstr ""
+"Message displayed to the customer after submitting the review. Use <code><0>"
+"</0></code> where you want to show the number of reviews submitted."
+
+#: includes/class-wse-pro-settings.php:602
+msgid "Mensaje Reseña Enviada (Pendiente)"
+msgstr "Message Review Sent (Pending)"
+
+#: includes/class-wse-pro-settings.php:55
+msgid "Mensajes Admin"
+msgstr "Admin Posts"
+
+#: includes/class-wse-pro-settings.php:56
+msgid "Mensajes Cliente"
+msgstr "Client Messages"
+
+#: includes/class-wse-pro-stats-dashboard.php:113
+msgid "Mensajes Enviados"
+msgstr "Sent Messages"
+
+#: includes/class-wse-pro-settings.php:765
+msgid "Minutos"
+msgstr "Minutes"
+
+#: includes/class-wse-pro-settings.php:271
+msgid "Modo de Envío SMS (Panel 1)"
+msgstr "SMS Sending Mode (Panel 1)"
+
+#: includes/class-wse-pro-settings.php:572
+#: includes/class-wse-pro-settings.php:834
+msgid "Monto Fijo"
+msgstr "Fixed Amount"
+
+#: includes/class-wse-pro-stats-dashboard.php:116
+msgid "Msg1:"
+msgstr "Msg1:"
+
+#: includes/class-wse-pro-stats-dashboard.php:117
+msgid "Msg2:"
+msgstr "Msg2:"
+
+#: includes/class-wse-pro-stats-dashboard.php:118
+msgid "Msg3:"
+msgstr "Msg3:"
+
+#: includes/class-wse-pro-placeholders.php:345
+msgid "N/A"
+msgstr "N/A"
+
+#: includes/class-wse-pro-server-compatibility.php:428
+msgid "No encontrada"
+msgstr "Not found"
+
+#: includes/class-wse-pro-server-compatibility.php:459
+msgid "No existe"
+msgstr " It does not exist"
+
+#: includes/class-wse-pro-coupon-manager.php:369
+msgid "No se encontró cupón válido para carrito #%d"
+msgstr "No valid coupon found for cart #%d"
+
+#: includes/class-wse-pro-coupon-manager.php:287
+msgid "No se pudo guardar el cupón"
+msgstr "Coupon could not be saved"
+
+#: includes/class-wse-pro-field-detector.php:326
+msgid "Nombre"
+msgstr "Name"
+
+#: includes/class-wse-pro-settings.php:57
+msgid "Notificaciones"
+msgstr "Notifications"
+
+#: includes/class-wse-pro-settings.php:354
+msgid "Notificaciones para Administradores"
+msgstr "Notifications for Administrators"
+
+#: includes/class-wse-pro-api-handler.php:359
+#, php-format
+msgid "Notificación WhatsApp enviada a %s (%s)."
+msgstr "WhatsApp notification sent to %s (%s)."
+
+#: includes/class-wse-pro-settings.php:438
+msgid "Nueva Nota de Pedido"
+msgstr "New Order Note"
+
+#: includes/class-wse-pro-settings.php:396
+msgid "Nueva Reseña Pendiente"
+msgstr "New Review Pending"
+
+#: includes/class-wse-pro-settings.php:329
+msgid "Número de Destino"
+msgstr "Destination Number"
+
+#: includes/class-wse-pro-settings.php:228
+msgid "Número de Remitente (Panel 2)"
+msgstr "Sender Number (Panel 2)"
+
+#: includes/class-wse-pro-api-handler.php:143
+msgid "Número de teléfono o mensaje vacío."
+msgstr "Empty phone number or message."
+
+#: includes/class-wse-pro-settings.php:360
+msgid "Números de Administradores"
+msgstr "Numbers of Administrators"
+
+#: includes/class-wse-pro-placeholders.php:527
+msgid "Objetos y Tecnología"
+msgstr "Objects and Technology"
+
+#: includes/class-wse-pro-placeholders.php:434
+msgid "Pagos y Envíos"
+msgstr "Payments & Shipping"
+
+#: includes/class-wse-pro-api-handler.php:425
+msgid "Panel 1"
+msgstr "Panel 1"
+
+#: includes/class-wse-pro-api-handler.php:425
+msgid "Panel 2"
+msgstr "Panel 2"
+
+#: includes/class-wse-pro-field-detector.php:332
+msgid "País"
+msgstr "Country"
+
+#: includes/class-wse-pro-placeholders.php:413
+msgid "Pedido (General)"
+msgstr "Order (General)"
+
+#: includes/class-wse-pro-placeholders.php:428
+msgid "Pedido (Listas de Productos)"
+msgstr "Order (Product Lists)"
+
+#: includes/class-wse-pro-placeholders.php:419
+msgid "Pedido (Totales)"
+msgstr "Order (Totals)"
+
+#: includes/class-wse-pro-server-compatibility.php:482
+msgid "PHP 8.3 es compatible - No requiere cambios"
+msgstr "PHP 8.3 is supported - No changes required"
+
+#: includes/class-wse-pro-settings.php:416
+msgid ""
+"Placeholders disponibles: {customer_fullname}, {order_id}, "
+"{first_product_name}, {review_rating}, {review_content}"
+msgstr ""
+"Available placeholders: {customer_fullname}, {order_id}, {first_product_name}"
+", {review_rating}, {review_content}"
+
+#: includes/class-wse-pro-settings.php:463
+msgid "Plantilla de Mensaje"
+msgstr "Message Template"
+
+#: includes/class-wse-pro-settings.php:505
+msgid "Plantilla del mensaje"
+msgstr "Message Template"
+
+#: includes/class-wse-pro-settings.php:538
+msgid "Plantilla del mensaje de agradecimiento"
+msgstr "Thank You Message Template"
+
+#: includes/class-wse-pro-settings.php:408
+msgid "Plantilla para Admin (Reseña Pendiente)"
+msgstr "Admin Template (Review Pending)"
+
+#: includes/class-wse-pro-settings.php:384
+msgid "Plantilla para Administradores"
+msgstr "Template for Administrators"
+
+#: includes/class-wse-pro-settings.php:367
+msgid "Plantillas de Mensajes para Administradores"
+msgstr "Message Templates for Administrators"
+
+#: includes/class-wse-pro-settings.php:430
+msgid "Plantillas de Mensajes para Clientes"
+msgstr "Customer Message Templates"
+
+#: includes/class-wse-pro-server-compatibility.php:399
+msgid "Plugins Activos"
+msgstr "Active Plugins"
+
+#: includes/class-wse-pro-settings.php:571
+#: includes/class-wse-pro-settings.php:833
+msgid "Porcentaje (%)"
+msgstr "Percentage (%)"
+
+#: includes/class-wse-pro-settings.php:593
+msgid "Prefijo del Cupón (Cupón)"
+msgstr "Coupon Prefix (Coupon)"
+
+#: includes/class-wse-pro-settings.php:658
+msgid "Primer Mensaje de Recuperación"
+msgstr "First Recovery Message"
+
+#: includes/class-wse-pro-field-detector.php:354
+msgid "Probar"
+msgstr "Try it"
+
+#: includes/class-wse-pro-placeholders.php:453
+msgid "Producto (Primer Ítem)"
+msgstr "Product (First Item)"
+
+#: includes/class-wse-pro-stats-dashboard.php:151
+msgid "Promedio:"
+msgstr "Average:"
+
+#: includes/class-wse-pro-settings.php:324
+msgid "Prueba de Envío"
+msgstr "Proof of Shipment"
+
+#: includes/class-wse-pro-settings.php:543
+msgid ""
+"Puedes usar placeholders como {customer_name}, {order_id}, y los de cupón si "
+"lo activas abajo."
+msgstr ""
+"You can use placeholders such as {customer_name}, {order_id}, and coupon "
+"holders if you activate it below."
+
+#: includes/class-wse-pro-server-compatibility.php:426
+msgid "Página de Checkout"
+msgstr "Checkout Page"
+
+#: includes/class-wse-pro-server-compatibility.php:474
+msgid "Recargar Diagnóstico"
+msgstr "Reload Diagnostics"
+
+#: includes/class-wse-pro-settings.php:399
+msgid ""
+"Recibe una notificación cuando un cliente envíe una nueva reseña que "
+"requiera aprobación."
+msgstr ""
+"Get notified when a customer submits a new review that requires approval."
+
+#: includes/class-wse-pro-settings.php:483
+msgid "Recordatorio de Reseña de Producto"
+msgstr "Product Review Reminder"
+
+#: includes/class-wse-pro-placeholders.php:459
+msgid "Reseñas"
+msgstr "Reviews"
+
+#: includes/class-wse-pro-settings.php:659
+msgid "Segundo Mensaje de Recuperación"
+msgstr "Second Recovery Message"
+
+#: includes/class-wse-pro-settings.php:256
+msgid "Selecciona el tipo de mensaje."
+msgstr "Select the type of message."
+
+#: includes/class-wse-pro-settings.php:203
+msgid "Seleccionar API"
+msgstr "Select API"
+
+#: includes/class-wse-pro-field-detector.php:317
+msgid "Selectores CSS"
+msgstr "CSS Selectors"
+
+#: includes/class-wse-pro-server-compatibility.php:485
+msgid "Si ves errores, revisa los logs en WooCommerce > Estado > Registros"
+msgstr "If you see errors, check the logs in WooCommerce > Status > Logs"
+
+#: includes/class-wse-pro-settings.php:254
+msgid "SMS"
+msgstr "sms"
+
+#. Author of the plugin
+msgid "smsenlinea"
+msgstr "the line"
+
+#: includes/class-wse-pro-server-compatibility.php:339
+msgid "Socket PHP-FPM"
+msgstr "Socket PHP-FPM"
+
+#: includes/class-wse-pro-server-compatibility.php:327
+msgid "Software"
+msgstr "Software"
+
+#: includes/class-wse-pro-placeholders.php:555
+msgid "Símbolos y Alertas"
+msgstr "Symbols and Alerts"
+
+#: includes/class-wse-pro-coupon-manager.php:328
+msgid "Tabla de cupones no existe"
+msgstr "Coupon table does not exist"
+
+#: includes/class-wse-pro-coupon-manager.php:874
+msgid "Tabla no existe"
+msgstr "Table does not exist"
+
+#: includes/class-wse-pro-stats-dashboard.php:140
+msgid "Tasa:"
+msgstr "Rate:"
+
+#: includes/class-wse-pro-stats-dashboard.php:189
+#: includes/class-wse-pro-field-detector.php:325
+msgid "Teléfono"
+msgstr "Phone"
+
+#: includes/class-wse-pro-settings.php:660
+msgid "Tercer Mensaje (Última Oportunidad)"
+msgstr "Third Message (Last Chance)"
+
+#: includes/class-wse-pro-stats-dashboard.php:159
+msgid "Tiempo Promedio"
+msgstr "Average Time"
+
+#: includes/class-wse-pro-placeholders.php:546
+msgid "Tiempo y Clima"
+msgstr "Weather and Climate"
+
+#: includes/class-wse-pro-placeholders.php:408
+msgid "Tienda"
+msgstr "Shop"
+
+#: includes/class-wse-pro-settings.php:567
+msgid "Tipo de Descuento (Cupón)"
+msgstr "Discount Type (Coupon)"
+
+#: includes/class-wse-pro-coupon-manager.php:122
+msgid "Tipo de descuento no válido"
+msgstr "Invalid discount type"
+
+#: includes/class-wse-pro-settings.php:830
+msgid "Tipo de descuento:"
+msgstr "Discount type:"
+
+#: includes/class-wse-pro-settings.php:249
+msgid "Tipo de Mensaje (Panel 1)"
+msgstr "Message Type (Panel 1)"
+
+#: includes/class-wse-pro-server-compatibility.php:321
+msgid "Tipo de Servidor"
+msgstr "Server Type"
+
+#: includes/class-wse-pro-settings.php:217
+msgid "Token de Autenticación (Panel 2)"
+msgstr "Authentication Token (Panel 2)"
+
+#: includes/class-wse-pro-placeholders.php:537
+msgid "Transporte y Viajes"
+msgstr "Transportation & Travel"
+
+#. Description of the plugin
+msgid ""
+"Una solución robusta para enviar notificaciones de WhatsApp a los clientes "
+"de WooCommerce utilizando la API de SMSenlinea. Incluye recordatorios de "
+"reseñas y recuperación de carritos abandonados con cupones personalizables."
+msgstr ""
+"A robust solution for sending WhatsApp notifications to WooCommerce "
+"customers using the SMS Enlinea API. Include review reminders and abandoned "
+"cart recovery with customizable coupons."
+
+#: includes/class-wse-pro-settings.php:364
+msgid "Uno por línea con código de país (Ej: 573001234567)."
+msgstr "One per line with a country code (Ex: 573001234567)."
+
+#: includes/class-wse-pro-settings.php:877
+msgid ""
+"Usa las variables {coupon_code}, {coupon_amount} y {coupon_expires} en tu "
+"plantilla para mostrar la información del cupón."
+msgstr ""
+"Use the {coupon_code}, {coupon_amount}, and {coupon_expires} variables in "
+"your template to display the coupon information."
+
+#: includes/class-wse-pro-field-detector.php:384
+msgid "Usa selectores CSS. Ejemplo:"
+msgstr "Use CSS selectors. Example:"
+
+#: includes/class-wse-pro-settings.php:276
+msgid "Usar créditos"
+msgstr "Use credits"
+
+#: includes/class-wse-pro-settings.php:275
+msgid "Usar mis dispositivos"
+msgstr "Use My Devices"
+
+#: includes/class-wse-pro-stats-dashboard.php:190
+msgid "Valor"
+msgstr "Value"
+
+#: includes/class-wse-pro-settings.php:913
+msgid "Variables y Emojis"
+msgstr "Variables and Emojis"
+
+#: includes/class-wse-pro-settings.php:920
+msgid "Variables:"
+msgstr "Variables:"
+
+#: includes/class-wse-pro-settings.php:314
+#, php-format
+msgid "Ver en <a href=\"%s\">WooCommerce > Registros</a> (<code>%s</code>)."
+msgstr "View in <a href=\"%s\">WooCommerce > Logs</a> (<code><1></1></code>)."
+
+#: includes/class-wse-pro-server-compatibility.php:472
+msgid "Ver Estadísticas"
+msgstr "View Statistics"
+
+#: includes/class-wse-pro-server-compatibility.php:473
+msgid "Ver Logs"
+msgstr "View Logs"
+
+#: includes/class-wse-pro-server-compatibility.php:387
+#: includes/class-wse-pro-server-compatibility.php:420
+msgid "Versión"
+msgstr "Version"
+
+#: includes/class-wse-pro-server-compatibility.php:332
+msgid "Versión de PHP"
+msgstr "PHP Version"
+
+#: includes/class-wse-pro-server-compatibility.php:363
+msgid "Versión Soportada"
+msgstr "Supported Version"
+
+#: includes/class-wse-pro-stats-dashboard.php:105
+msgid "vs periodo anterior"
+msgstr "vs previous period"
+
+#: includes/class-wse-pro-settings.php:585
+msgid "Válido por (días) (Cupón)"
+msgstr "Valid for (days) (Coupon)"
+
+#: includes/class-wse-pro-settings.php:859
+msgid "Válido por:"
+msgstr "Valid for:"
+
+#: includes/class-wse-pro-settings.php:253
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+#: includes/class-wse-pro-settings.php:262
+msgid "WhatsApp Account ID (Panel 1)"
+msgstr "WhatsApp Account ID (Panel 1)"
+
+#. Name of the plugin
+#: includes/class-wse-pro-settings.php:43
+msgid "WooWApp"
+msgstr "WooWApp"
+
+#: includes/class-wse-pro-settings.php:606
+msgid ""
+"¡Gracias por tu opinión! %d reseña(s) han sido enviadas y están pendientes "
+"de aprobación. Apreciamos mucho tu tiempo y tus comentarios."
+msgstr ""
+"Thank you for your opinion! %d review(s) have been submitted and are pending "
+"approval. We really appreciate your time and feedback."
+
+#: includes/class-wse-pro-settings.php:509
+msgid ""
+"¡Hola {customer_name}! ¿Te importaría dejar una reseña de "
+"{first_product_name}? {first_product_review_link}"
+msgstr ""
+"Hello {customer_name}! Would you mind leaving a review of "
+"{first_product_name}? {first_product_review_link}"
+
+#: includes/class-wse-pro-settings.php:665
+msgid ""
+"¡Hola {customer_name}! 🎁 Tus productos te esperan. Usa el código "
+"{coupon_code} para {coupon_amount} de descuento. ¡Válido hasta "
+"{coupon_expires}! {checkout_link}"
+msgstr ""
+"Hello {customer_name}! 🎁 Your products are waiting for you. Use the code "
+"{coupon_code} for {coupon_amount} discount. Valid until {coupon_expires}! "
+"{checkout_link}"
+
+#: includes/class-wse-pro-settings.php:664
+msgid ""
+"¡Hola {customer_name}! 👋 Notamos que dejaste productos en tu carrito. "
+"¡Completa tu compra ahora! {checkout_link}"
+msgstr ""
+"Hello {customer_name}! 👋 We noticed that you left products in your cart. "
+"Complete your purchase now! {checkout_link}"
+
+#: includes/class-wse-pro-settings.php:542
+msgid ""
+"¡Muchas gracias por tu reseña, {customer_name}! ✨ Como agradecimiento, aquí "
+"tienes un cupón de {coupon_amount} para tu próxima compra: {coupon_code}. "
+"¡Válido hasta {coupon_expires}!"
+msgstr ""
+"Thank you so much for your review, {customer_name}! ✨ As a thank you, here's "
+"a {coupon_amount} coupon for your next purchase: {coupon_code}. Valid until "
+"{coupon_expires}!"
+
+#: includes/class-wse-pro-settings.php:516
+msgid "¿Calificación obligatoria?"
+msgstr "Compulsory qualification?"
+
+#: includes/class-wse-pro-settings.php:590
+msgid "¿Cuántos días será válido el cupón desde que se envía?"
+msgstr "How many days will the coupon be valid from the time it is sent?"
+
+#: includes/class-wse-pro-api-handler.php:364
+#, php-format
+msgid "Éxito (Ref: %s, Tel: %s, Dest: %s). ID: %s"
+msgstr "Success (Ref: %s, Tel: %s, Dest: %s). ID: %s"
+
+#: includes/class-wse-pro-coupon-manager.php:897
+#, php-format
+msgid "Índices faltantes: %s"
+msgstr "Missing Indexes: %s"
+
+#: includes/class-wse-pro-stats-dashboard.php:91
+msgid "Último año"
+msgstr "Last year"
+
+#: includes/class-wse-pro-stats-dashboard.php:89
+msgid "Últimos 30 días"
+msgstr "Last 30 days"
+
+#: includes/class-wse-pro-stats-dashboard.php:88
+msgid "Últimos 7 días"
+msgstr "Last 7 days"
+
+#: includes/class-wse-pro-stats-dashboard.php:90
+msgid "Últimos 90 días"
+msgstr "Last 90 days"
+
+#: includes/class-wse-pro-field-detector.php:297
+msgid "ℹ️ Información:"
+msgstr "i️ information:"
+
+#: includes/class-wse-pro-settings.php:666
+msgid ""
+"⏰ {customer_name}, ¡ÚLTIMA OPORTUNIDAD! {coupon_amount} de descuento con "
+"{coupon_code}. Expira: {coupon_expires}. ¡No lo pierdas! {checkout_link}"
+msgstr ""
+"⏰ {customer_name}, LAST CHANCE! {coupon_amount} off with {coupon_code}. "
+"Expires: {coupon_expires}. Don't miss it! {checkout_link}"
+
+#: includes/class-wse-pro-settings.php:689
+msgid "⏱️ Enviar después de"
+msgstr "⏱️ Send after"
+
+#: includes/class-wse-pro-field-detector.php:280
+msgid "⚙️ Campos de Captura"
+msgstr "⚙️ Capture Fields"
+
+#: includes/class-wse-pro-field-detector.php:293
+msgid "⚙️ Configuración de Campos de Captura - WooWApp"
+msgstr "⚙️ Capture Field Settings - WooWApp"
+
+#: includes/class-wse-pro-server-compatibility.php:469
+msgid "⚡ Acciones Rápidas"
+msgstr "⚡ Quick Actions"
+
+#: includes/class-wse-pro-api-handler.php:430
+#, php-format
+msgid "✅ ¡Mensaje de prueba (%s) desde tu tienda! La API de %s funciona."
+msgstr "✅ Test message (%s) from your store! The %s API works."
+
+#: includes/class-wse-pro-field-detector.php:306
+#, php-format
+msgid "✅ Última detección: %s atrás"
+msgstr "✅ Last Detected: %s Back"
+
+#: includes/class-wse-pro-settings.php:557
+msgid "⭐ (1 estrella o más)"
+msgstr "⭐ (1 star or more)"
+
+#: includes/class-wse-pro-settings.php:558
+msgid "⭐⭐ (2 estrellas o más)"
+msgstr "⭐⭐ (2 stars or more)"
+
+#: includes/class-wse-pro-settings.php:559
+msgid "⭐⭐⭐ (3 estrellas o más)"
+msgstr "⭐⭐⭐ (3 stars or more)"
+
+#: includes/class-wse-pro-settings.php:560
+msgid "⭐⭐⭐⭐ (4 estrellas o más)"
+msgstr "⭐⭐⭐⭐ (4 stars or more)"
+
+#: includes/class-wse-pro-settings.php:561
+msgid "⭐⭐⭐⭐⭐ (Solo 5 estrellas)"
+msgstr "⭐⭐⭐⭐⭐ (5 stars only)"
+
+#: includes/class-wse-pro-settings.php:525
+msgid "🎁 Recompensa por Reseña"
+msgstr "🎁 Review Reward"
+
+#: includes/class-wse-pro-stats-dashboard.php:456
+msgid "🎉 Conversión"
+msgstr "🎉 Conversion"
+
+#: includes/class-wse-pro-settings.php:813
+msgid "🏷️ Prefijo del cupón:"
+msgstr "🏷️ Coupon prefix:"
+
+#: includes/class-wse-pro-server-compatibility.php:480
+msgid "💡 Recomendaciones"
+msgstr "💡 Recommendations"
+
+#: includes/class-wse-pro-settings.php:876
+msgid "💡 Tip:"
+msgstr "💡 Tip:"
+
+#: includes/class-wse-pro-settings.php:709
+msgid "💳 Configuración de Cupón"
+msgstr "💳 Coupon Settings"
+
+#: includes/class-wse-pro-stats-dashboard.php:86
+msgid "📅 Periodo:"
+msgstr "📅 Period:"
+
+#: includes/class-wse-pro-stats-dashboard.php:169
+msgid "📈 Conversiones por Día"
+msgstr "📈 Conversions per Day"
+
+#: includes/class-wse-pro-stats-dashboard.php:81
+msgid "📊 Estadísticas de Recuperación de Carritos"
+msgstr "📊 Cart Recovery Statistics"
+
+#: includes/class-wse-pro-stats-dashboard.php:32
+msgid "📊 Estadísticas WooWApp"
+msgstr "📊 WooWApp Statistics"
+
+#: includes/class-wse-pro-stats-dashboard.php:174
+msgid "📊 Rendimiento por Mensaje"
+msgstr "📊 Performance Per Message"
+
+#: includes/class-wse-pro-server-compatibility.php:383
+msgid "📘 WordPress"
+msgstr "📘 WordPress"
+
+#: includes/class-wse-pro-settings.php:413
+#, php-format
+msgid ""
+"📝 Nueva reseña de {customer_fullname} para \"{first_product_name}\" (Pedido "
+"#{order_id}). Requiere aprobación. Calificación: %s estrellas."
+msgstr ""
+"📝 New {customer_fullname} review for \"{first_product_name}\" (Order "
+"#{order_id}). Requires approval. Rating: %s stars."
+
+#: includes/class-wse-pro-settings.php:700
+msgid "📝 Plantilla del mensaje"
+msgstr "📝 Message Template"
+
+#: includes/class-wse-pro-stats-dashboard.php:454
+msgid "📤 Enviado"
+msgstr "📤 Envoy"
+
+#: includes/class-wse-pro-field-detector.php:180
+msgid "🔍 Campos detectados automáticamente:"
+msgstr "🔍 Auto-detected fields:"
+
+#: includes/class-wse-pro-settings.php:389
+#, php-format
+msgid "🔔 Pedido #{order_id} de {customer_fullname} cambió a: %s."
+msgstr "🔔 Order #{order_id} from {customer_fullname} changed to: %s."
+
+#: includes/class-wse-pro-stats-dashboard.php:455
+msgid "🔗 Click"
+msgstr "🔗 Click"
+
+#: includes/class-wse-pro-server-compatibility.php:249
+msgid "🔧 Diagnóstico Automático de Servidor - WooWApp"
+msgstr "🔧 Automatic Server Diagnostics - WooWApp"
+
+#: includes/class-wse-pro-server-compatibility.php:236
+msgid "🔧 Diagnóstico de Servidor"
+msgstr "🔧 Server Diagnostics"
+
+#: includes/class-wse-pro-field-detector.php:363
+msgid "🔧 Personalizar Selectores"
+msgstr "🔧 Customize Selectors"
+
+#: includes/class-wse-pro-stats-dashboard.php:181
+msgid "🕐 Actividad Reciente"
+msgstr "🕐 Recent Activity"
+
+#: includes/class-wse-pro-server-compatibility.php:318
+msgid "🖥️ Información del Servidor"
+msgstr "🖥️ Server Information"
+
+#: includes/class-wse-pro-server-compatibility.php:437
+msgid "🗄️ Base de Datos"
+msgstr "🗄️ Database"
+
+#: includes/class-wse-pro-server-compatibility.php:359
+msgid "😊 PHP"
+msgstr "😊 PHP"
+
+#: includes/class-wse-pro-settings.php:616
+msgid "🛒 Recuperación de Carrito Abandonado"
+msgstr "🛒 Abandoned Cart Recovery"
+
+#: includes/class-wse-pro-server-compatibility.php:408
+msgid "🛒 WooCommerce"
+msgstr "🛒 WooCommerce"
