@@ -19,10 +19,14 @@ if (!defined('ABSPATH')) {
 }
 
 // Constantes del plugin
-define('WSE_PRO_VERSION', '2.2.2');
+define('WSE_PRO_VERSION', '2.2.2'); // Mantén tu versión actual
 define('WSE_PRO_DB_VERSION', '2.2.2');
 define('WSE_PRO_PATH', plugin_dir_path(__FILE__));
 define('WSE_PRO_URL', plugin_dir_url(__FILE__));
+define('WSE_PRO_FILE', __FILE__); // Ruta al archivo principal del plugin
+define('WSE_PRO_PUBLIC_SLUG', 'plugin-whatsapp-wordpress-woowapp'); // Slug PÚBLICO del plugin (de la URL)
+define('WSE_PRO_UPDATE_ID', 'woowapp-pro-stable'); //
+// --- FIN CONSTANTES ---
 
 // Hooks de activación y desactivación
 register_activation_hook(__FILE__, ['WooWApp', 'on_activation']);
@@ -2260,5 +2264,6 @@ function handle_cart_capture() {
 // Inicializar el plugin
 
 WooWApp::get_instance();
+
 
 
