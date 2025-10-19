@@ -367,4 +367,70 @@ jQuery(function($) {
         .appendTo('head');
 
     console.log(wse_pro_admin_params.i18n.scriptsLoaded);
+
+});
+jQuery(function($) {
+    'use strict';
+
+    // Manejador para el botón de regenerar clave secreta del cron
+    $('#wse_pro_regenerate_cron_key_button').on('click', function(e) {
+        e.preventDefault();
+        var $button = $(this);
+        var $statusSpan = $('#regenerate_key_status');
+        var nonce = $('#wse_regenerate_cron_key_nonce').val(); // Obtener el nonce
+
+        // Confirmación
+        if (!confirm(wse_pro_admin_params.i18n.regenerateKeyConfirm || '¿Estás seguro de que quieres generar una nueva clave secreta? La URL anterior dejará de funcionar.')) {
+            return;
+        }
+
+        $button.prop('disabled', true).addClass('button-loading');
+        $statusSpan.text(wse_pro_admin_params.i18n.regenerating || 'Regenerando...').fadeIn();
+
+        $.ajax({
+            url: wse_pro_admin_params.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'wse_regenerate_cron_key',
+                nonce: nonce // Enviar el nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Actualizar los campos en la página con los nuevos valores
+                    $('#wse_pro_cron_secret_key_display').val(response.data.new_key);
+                    $('#wse_pro_cron_trigger_url_display').val(response.data.new_url);
+                    $statusSpan.text('✅ ' + response.data.message).css('color', 'green');
+                    // Usar la función showNotification si está disponible
+                    if (typeof showNotification === 'function') {
+                        showNotification(response.data.message, 'success');
+                    }
+                } else {
+                    var errorMsg = response.data.message || wse_pro_admin_params.i18n.unknownError || 'Error desconocido.';
+                    $statusSpan.text('❌ ' + errorMsg).css('color', 'red');
+                    if (typeof showNotification === 'function') {
+                        showNotification(errorMsg, 'error');
+                    }
+                }
+            },
+            error: function() {
+                var errorMsg = wse_pro_admin_params.i18n.connectionError || 'Error de conexión.';
+                $statusSpan.text('❌ ' + errorMsg).css('color', 'red');
+                if (typeof showNotification === 'function') {
+                    showNotification(errorMsg, 'error');
+                }
+            },
+            complete: function() {
+                $button.prop('disabled', false).removeClass('button-loading');
+                // Ocultar mensaje después de unos segundos
+                setTimeout(function() {
+                    $statusSpan.fadeOut();
+                }, 5000);
+            }
+        });
+    });
+
+    // Añadir traducciones necesarias a wse_pro_admin_params.i18n en PHP:
+    // 'regenerateKeyConfirm' => __('¿Estás seguro de que quieres generar una nueva clave secreta? La URL anterior dejará de funcionar.', 'woowapp-smsenlinea-pro'),
+    // 'regenerating' => __('Regenerando...', 'woowapp-smsenlinea-pro'),
+    // Añadir estas claves al wp_localize_script en class-wse-pro-settings.php -> enqueue_admin_scripts
 });
