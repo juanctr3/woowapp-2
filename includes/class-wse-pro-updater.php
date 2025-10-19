@@ -1,7 +1,7 @@
 <?php
 /**
  * Clase para gestionar las actualizaciones automáticas de WooWApp Pro.
- * Adaptado de la documentación de descargas.smsenlinea.com
+ * Adaptado de la documentación v2 de descargas.smsenlinea.com
  */
 
 if (!defined('ABSPATH')) {
@@ -11,15 +11,16 @@ if (!defined('ABSPATH')) {
 class WSE_Pro_Auto_Updater {
 
     private $api_url;
-    private $plugin_slug;
+    private $update_identifier; // <-- CAMBIO: Usa identificador de actualización
     private $plugin_version;
     private $license_key;
     private $plugin_file_basename;
 
-    public function __construct($plugin_file, $plugin_slug, $plugin_version, $license_key) {
+    // Constructor actualizado para recibir $update_identifier
+    public function __construct($plugin_file, $update_identifier, $plugin_version, $license_key) {
         $this->api_url = 'https://descargas.smsenlinea.com/api/update.php';
-        $this->plugin_file_basename = plugin_basename($plugin_file); // Usa la ruta del archivo principal
-        $this->plugin_slug = $plugin_slug;
+        $this->plugin_file_basename = plugin_basename($plugin_file);
+        $this->update_identifier = $update_identifier; // <-- CAMBIO: Guardar identificador
         $this->plugin_version = $plugin_version;
         $this->license_key = $license_key;
 
@@ -33,51 +34,33 @@ class WSE_Pro_Auto_Updater {
      * Comprueba si hay actualizaciones disponibles.
      */
     public function check_for_updates($transient) {
-        // Si WordPress no está comprobando, salir
         if (empty($transient->checked)) {
             return $transient;
         }
-
-        // Si no hay clave de licencia, no buscar actualizaciones premium
         if (empty($this->license_key)) {
-             error_log('WooWApp Updater: No license key found, skipping premium update check.');
+            error_log('WooWApp Updater: No license key found, skipping premium update check.');
             return $transient;
         }
 
         // Llamar a nuestra API para obtener la información de la última versión
         $response = $this->call_api('plugin_information');
+        error_log('WooWApp Updater Check API Response: ' . print_r($response, true));
 
-        // Log de la respuesta de la API de actualización
-        error_log('WooWApp Updater API Response: ' . print_r($response, true));
-
-
-        // Si la llamada falló o no devolvió un objeto válido, salir
-        if ($response === false || !is_object($response) || !isset($response->new_version)) {
-            error_log('WooWApp Updater: Failed to get update information from API or invalid response.');
-            return $transient;
-        }
-
-        // Comparar la versión actual con la nueva versión
-        if (version_compare($this->plugin_version, $response->new_version, '<')) {
-            // Hay una nueva versión disponible, añadirla al transient de WordPress
+        if ($response && isset($response->new_version) && version_compare($this->plugin_version, $response->new_version, '<')) {
+            // Hay una nueva versión disponible, añadirla al transient
             // Asegurarse de que el objeto tenga las propiedades esperadas por WordPress
-            $update_info = (object)[
-                'slug'        => $this->plugin_slug,
-                'plugin'      => $this->plugin_file_basename,
-                'new_version' => $response->new_version,
-                'url'         => $response->homepage ?? '', // URL del plugin
-                'package'     => $response->download_link ?? '', // URL de descarga del ZIP
-                'icons'       => (array) ($response->icons ?? []),
-                'banners'     => (array) ($response->banners ?? []),
-                'tested'      => $response->tested ?? '', // Versión de WP probada
-                'requires_php'=> $response->requires_php ?? '', // Versión de PHP requerida
-            ];
-
-            $transient->response[$this->plugin_file_basename] = $update_info;
-             error_log('WooWApp Updater: Update available! Version ' . $response->new_version);
-
+            $response->plugin = $this->plugin_file_basename; // Asegurarse que esta propiedad existe
+             // Comprobar si package URL existe y es válida
+             if (empty($response->package) || !filter_var($response->package, FILTER_VALIDATE_URL)) {
+                error_log('WooWApp Updater Error: Invalid or missing package URL in API response for version ' . $response->new_version);
+                // No añadir al transient si no hay link de descarga válido
+             } else {
+                $transient->response[$this->plugin_file_basename] = $response;
+                error_log('WooWApp Updater: Update available! Version ' . $response->new_version . ' | Package: ' . $response->package);
+             }
         } else {
-             error_log('WooWApp Updater: Plugin is up to date (Current: ' . $this->plugin_version . ', Latest: ' . $response->new_version . ')');
+             $latest_version = $response->new_version ?? 'N/A';
+             error_log('WooWApp Updater: Plugin is up to date (Current: ' . $this->plugin_version . ', Latest: ' . $latest_version . ') or API check failed.');
         }
 
         return $transient;
@@ -87,31 +70,34 @@ class WSE_Pro_Auto_Updater {
      * Proporciona información detallada del plugin para la ventana modal de "Ver detalles".
      */
     public function plugin_information($result, $action, $args) {
-         // Solo actuar si se pide información de nuestro plugin y la acción es 'plugin_information'
-        if ($action !== 'plugin_information' || !isset($args->slug) || $args->slug !== $this->plugin_slug) {
-            return $result; // Devolver $result sin modificar
-        }
+        // Solo actuar si se pide información de nuestro plugin y la acción es 'plugin_information'
+        // Comparamos con el plugin_file_basename o el update_identifier (más seguro)
+         $request_slug = $args->slug ?? '';
+         // Comparar el slug solicitado con el basename o el ID de actualización
+         if ($action !== 'plugin_information' || ($request_slug !== dirname($this->plugin_file_basename) && $request_slug !== $this->update_identifier)) {
+             return $result;
+         }
 
-         // Si no hay clave de licencia, no mostrar información premium
+
         if (empty($this->license_key)) {
-             error_log('WooWApp Updater (Info): No license key, cannot fetch premium details.');
-            return $result; // Podríamos devolver un error o simplemente no hacer nada
+            error_log('WooWApp Updater (Info): No license key, cannot fetch premium details.');
+            return $result;
         }
 
         // Llamar a la API para obtener los detalles
         $response = $this->call_api('plugin_information');
+        error_log('WooWApp Updater Info API Response: ' . print_r($response, true));
 
-         // Si la llamada falló o no devolvió un objeto válido, devolver $result original
+        // Si la llamada falló o no devolvió un objeto válido, devolver $result original
         if ($response === false || !is_object($response)) {
-             error_log('WooWApp Updater (Info): Failed to get plugin details from API.');
+            error_log('WooWApp Updater (Info): Failed to get plugin details from API.');
             return $result;
         }
 
         // Rellenar el objeto $result con la información de la API
-        // WordPress espera un objeto con propiedades específicas
         $result = (object)[
-            'name'              => $response->name ?? $this->plugin_slug,
-            'slug'              => $this->plugin_slug,
+            'name'              => $response->name ?? dirname($this->plugin_file_basename), // Usar nombre de API o slug
+            'slug'              => $this->update_identifier, // Usar update_identifier como slug para la modal
             'version'           => $response->new_version ?? $this->plugin_version,
             'author'            => $response->author ?? '',
             'author_profile'    => $response->author_profile ?? '',
@@ -119,14 +105,27 @@ class WSE_Pro_Auto_Updater {
             'requires'          => $response->requires ?? '', // Versión mínima de WP
             'tested'            => $response->tested ?? '', // Versión de WP probada
             'requires_php'      => $response->requires_php ?? '',
-            'download_link'     => $response->download_link ?? '',
-            'trunk'             => $response->download_link ?? '', // A veces se usa trunk como sinónimo
+            'download_link'     => $response->package ?? '', // Usar package como download_link
+            'trunk'             => $response->package ?? '',
             'last_updated'      => $response->last_updated ?? '',
             'sections'          => (array) ($response->sections ?? []), // Changelog, description, etc.
             'banners'           => (array) ($response->banners ?? []),
             'icons'             => (array) ($response->icons ?? []),
+            'banners_rtl'       => [], // Añadir si tu API lo soporta
+            'tags'              => (array) ($response->tags ?? []),
+            'donate_link'       => $response->donate_link ?? '',
         ];
-        error_log('WooWApp Updater (Info): Successfully fetched plugin details from API.');
+
+         // Asegurar que las secciones existan como array aunque estén vacías
+        if (empty($result->sections)) {
+            $result->sections = ['description' => '', 'changelog' => ''];
+        } else {
+             // Convertir objeto de secciones a array si es necesario
+             $result->sections = (array) $result->sections;
+        }
+
+
+        error_log('WooWApp Updater (Info): Successfully prepared plugin details for modal.');
 
         return $result;
     }
@@ -136,17 +135,20 @@ class WSE_Pro_Auto_Updater {
      */
     private function call_api($action) {
         $payload = [
-             'timeout' => 15,
+            'timeout' => 20,
+            'sslverify' => true,
             'body' => [
-                'action'        => $action,
-                'plugin_slug'   => $this->plugin_slug,
-                'version'       => $this->plugin_version,
-                'license_key'   => $this->license_key,
-                 'domain'        => home_url(), // Enviar dominio también para verificación
+                'action'            => $action,
+                'update_identifier' => $this->update_identifier, // <-- CAMBIO: Enviar identificador
+                'version'           => $this->plugin_version,
+                'license_key'       => $this->license_key,
+                'domain'            => home_url(), // Enviar dominio para validación adicional
+                'wp_version'        => get_bloginfo('version'), // Versión de WP del sitio
+                'php_version'       => phpversion(), // Versión de PHP del sitio
             ],
         ];
 
-         error_log('WooWApp Updater API Call - URL: ' . $this->api_url . ' | Payload: ' . print_r($payload['body'], true));
+        error_log('WooWApp Updater API Call - URL: ' . $this->api_url . ' | Payload: ' . print_r($payload['body'], true));
 
         $request = wp_remote_post($this->api_url, $payload);
 
@@ -157,25 +159,21 @@ class WSE_Pro_Auto_Updater {
         }
 
         $body = wp_remote_retrieve_body($request);
-        $response = json_decode($body); // La API de ejemplo devuelve un objeto, no un array
+        // La API de actualizaciones devuelve un objeto JSON serializado
+        $response = json_decode($body); // Decodificar como objeto
 
         error_log('WooWApp Updater API Response - Raw Body: ' . $body);
 
-
         // Verificar si la respuesta es un objeto JSON válido y no está vacío
         if (is_object($response) && !empty($response)) {
-            // Importante: La API debe incluir la propiedad 'plugin' con el basename correcto
-            // Si no lo hace, lo añadimos nosotros aquí.
-            if (!isset($response->plugin)) {
-                $response->plugin = $this->plugin_file_basename;
-            }
+            // Añadir la propiedad 'plugin' que WordPress espera
+            $response->plugin = $this->plugin_file_basename;
             return $response;
         } elseif ($response === null && json_last_error() !== JSON_ERROR_NONE) {
-            error_log('WooWApp Updater API Error: Invalid JSON response.');
+             error_log('WooWApp Updater API Error: Invalid JSON response.');
         } else {
              error_log('WooWApp Updater API Error: Empty or unexpected response format.');
         }
-
 
         return false;
     }
