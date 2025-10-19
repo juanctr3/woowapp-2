@@ -285,6 +285,14 @@ class WSE_Pro_API_Handler {
     }
     
     
+    /**
+     * Formatea un número de teléfono con el código de país si es necesario.
+     * PRIORIZA el país del cliente sobre el default.
+     *
+     * @param string $phone       Número de teléfono.
+     * @param string $country_iso Código ISO del país del cliente (ej. 'PE', 'CO').
+     * @return string             Número de teléfono formateado.
+     */
     private function format_phone($phone, $country_iso) {
         // Limpiar cualquier caracter no numérico del teléfono
         $phone = preg_replace('/[^\d]/', '', $phone);
@@ -304,26 +312,31 @@ class WSE_Pro_API_Handler {
             $customer_calling_code = $this->country_codes[$country_iso];
             // Verificación simple: si el teléfono ya empieza con este código, asumimos que está bien
             if (strpos($phone, $customer_calling_code) === 0) {
-                 $this->log_info(sprintf(__('Teléfono %s ya parece incluir el código de país %s para %s. No se añadirá prefijo.', 'woowapp-smsenlinea-pro'), $phone, $customer_calling_code, $country_iso));
+                 // Usar el método log de esta clase
+                 $this->log(sprintf(__('Teléfono %s ya parece incluir el código de país %s para %s. No se añadirá prefijo.', 'woowapp-smsenlinea-pro'), $phone, $customer_calling_code, $country_iso));
                  return $phone; // Devolver sin modificar si ya empieza con el código correcto
             }
             // Si no empieza, guardamos este código como el candidato principal
             $calling_code = $customer_calling_code;
-            $this->log_info(sprintf(__('Código de país %s determinado para %s.', 'woowapp-smsenlinea-pro'), $calling_code, $country_iso));
+            // Usar el método log de esta clase
+            $this->log(sprintf(__('Código de país %s determinado para %s.', 'woowapp-smsenlinea-pro'), $calling_code, $country_iso));
         } else {
-             $this->log_info(sprintf(__('No se pudo determinar código de país desde ISO "%s". Se intentará usar el predeterminado.', 'woowapp-smsenlinea-pro'), $country_iso));
+             // Usar el método log de esta clase
+             $this->log(sprintf(__('No se pudo determinar código de país desde ISO "%s". Se intentará usar el predeterminado.', 'woowapp-smsenlinea-pro'), $country_iso));
         }
 
         // 2. Si NO obtuvimos un código del país del cliente, Y SI hay un código predeterminado configurado, usar el predeterminado
         if (is_null($calling_code) && !empty($default_code)) {
             // Verificación simple: si el teléfono ya empieza con el código predeterminado
              if (strpos($phone, $default_code) === 0) {
-                 $this->log_info(sprintf(__('Teléfono %s ya parece incluir el código de país predeterminado %s. No se añadirá prefijo.', 'woowapp-smsenlinea-pro'), $phone, $default_code));
+                 // Usar el método log de esta clase
+                 $this->log(sprintf(__('Teléfono %s ya parece incluir el código de país predeterminado %s. No se añadirá prefijo.', 'woowapp-smsenlinea-pro'), $phone, $default_code));
                  return $phone; // Devolver sin modificar
              }
             // Si no empieza, usamos el predeterminado como candidato
             $calling_code = $default_code;
-            $this->log_info(sprintf(__('Usando código de país predeterminado: %s', 'woowapp-smsenlinea-pro'), $calling_code));
+            // Usar el método log de esta clase
+            $this->log(sprintf(__('Usando código de país predeterminado: %s', 'woowapp-smsenlinea-pro'), $calling_code));
         }
 
         // --- Aplicación del Código (si encontramos uno) ---
@@ -332,7 +345,8 @@ class WSE_Pro_API_Handler {
             if (strpos($phone, $calling_code) !== 0) {
                 // Prependemos el código, quitando ceros iniciales del número original si los hubiera
                 $formatted_phone = $calling_code . ltrim($phone, '0');
-                $this->log_info(sprintf(__('Formateando teléfono %s a %s usando el código %s.', 'woowapp-smsenlinea-pro'), $phone, $formatted_phone, $calling_code));
+                // Usar el método log de esta clase
+                $this->log(sprintf(__('Formateando teléfono %s a %s usando el código %s.', 'woowapp-smsenlinea-pro'), $phone, $formatted_phone, $calling_code));
                 return $formatted_phone;
             } else {
                 // Si ya empezaba con el código (verificado antes), lo devolvemos tal cual. Log ya hecho arriba.
@@ -341,7 +355,8 @@ class WSE_Pro_API_Handler {
         }
 
         // 3. Si no pudimos determinar ningún código (ni del cliente, ni predeterminado), devolvemos el número limpio tal cual.
-        $this->log_warning(sprintf(__('No se pudo determinar un código de país para %s (ISO: %s, Default: %s). Enviando número tal cual.', 'woowapp-smsenlinea-pro'), $phone, $country_iso, $default_code ?: 'ninguno'));
+        // Usar el método log de esta clase (podríamos considerarlo un warning, pero log() solo añade a un handle)
+        $this->log(sprintf(__('ADVERTENCIA: No se pudo determinar un código de país para %s (ISO: %s, Default: %s). Enviando número tal cual.', 'woowapp-smsenlinea-pro'), $phone, $country_iso, $default_code ?: __('ninguno', 'woowapp-smsenlinea-pro')));
         return $phone;
     }
     
@@ -476,3 +491,4 @@ class WSE_Pro_API_Handler {
     }
 
 }
+
