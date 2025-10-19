@@ -2117,15 +2117,21 @@ add_action('wp_ajax_wse_pro_capture_cart', 'handle_cart_capture');
 add_action('wp_ajax_nopriv_wse_pro_capture_cart', 'handle_cart_capture');
 
 function handle_cart_capture() {
+    // Verificar Nonce (ya estaba)
     if (!check_ajax_referer('wse_pro_capture_cart_nonce', 'nonce', false)) {
-        wp_send_json_error(['message' => __('Nonce inválido', 'woowapp-smsenlinea-pro')]);
+        // Añadir log y mensaje traducible
+        error_log('WooWApp Capture Error: Nonce check failed.');
+        wp_send_json_error(['message' => __('Nonce inválido. Recarga la página.', 'woowapp-smsenlinea-pro')]);
         return;
     }
 
     global $wpdb;
     $table = $wpdb->prefix . 'wse_pro_abandoned_carts';
 
-    // Obtener datos del POST
+    // Log: Datos recibidos del POST
+    error_log('WooWApp Capture Data Received: ' . print_r($_POST, true));
+
+    // Obtener datos del POST (igual que antes)
     $phone = sanitize_text_field($_POST['billing_phone'] ?? '');
     $email = sanitize_email($_POST['billing_email'] ?? '');
     $first_name = sanitize_text_field($_POST['billing_first_name'] ?? '');
@@ -2134,88 +2140,125 @@ function handle_cart_capture() {
     $city = sanitize_text_field($_POST['billing_city'] ?? '');
     $state = sanitize_text_field($_POST['billing_state'] ?? '');
     $postcode = sanitize_text_field($_POST['billing_postcode'] ?? '');
-    $country = sanitize_text_field($_POST['billing_country'] ?? '');
-    
-    // Obtener sesión de WooCommerce
+    $country = sanitize_text_field($_POST['billing_country'] ?? ''); // Obtenemos el país
+
+    // Log: Valor del país obtenido del POST
+    error_log('WooWApp Capture: Country code from POST: ' . $country);
+
+    // Obtener sesión de WooCommerce (igual que antes)
     $session_id = WC()->session ? WC()->session->get_customer_id() : '';
 
     $existing = null;
-    
-    // Nueva lógica de búsqueda
+
+    // Lógica de búsqueda (igual que antes)
     if (!empty($phone) || !empty($email)) {
         $query_parts = [];
         $params = [];
-        
         if (!empty($phone)) {
-            $query_parts[] = "phone = %s";
+            $query_parts[] = "phone = %s"; // OJO: Usar 'phone' o 'billing_phone' dependiendo de cuál se busca
             $params[] = $phone;
         }
         if (!empty($email)) {
             $query_parts[] = "billing_email = %s";
             $params[] = $email;
         }
-
         $existing = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table 
-             WHERE (" . implode(' OR ', $query_parts) . ")
-             AND status = 'active' 
-             ORDER BY id DESC LIMIT 1",
+            "SELECT id FROM $table WHERE (" . implode(' OR ', $query_parts) . ") AND status = 'active' ORDER BY id DESC LIMIT 1",
             $params
         ));
-    } 
-    
+    }
     if (!$existing && !empty($session_id)) {
         $existing = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table 
-             WHERE session_id = %s
-             AND status = 'active' 
-             ORDER BY id DESC LIMIT 1",
+            "SELECT id FROM $table WHERE session_id = %s AND status = 'active' ORDER BY id DESC LIMIT 1",
             $session_id
         ));
     }
 
+    // Preparar datos comunes
     $now = current_time('mysql');
-    $cart_contents = serialize(WC()->cart ? WC()->cart->get_cart() : []);
-    $cart_total = WC()->cart ? WC()->cart->get_total('edit') : 0;
-    
+    $cart = WC()->cart; // Obtener carrito
+    $cart_contents = $cart ? serialize($cart->get_cart()) : serialize([]);
+    $cart_total = $cart ? $cart->get_total('edit') : 0;
+
+    // Asegurarnos de que el carrito no esté vacío antes de guardar/actualizar
+    if (!$cart || $cart->is_empty()) {
+         error_log('WooWApp Capture: Attempted to save an empty cart. Aborting.');
+         wp_send_json_success(['message' => __('Carrito vacío, no guardado.', 'woowapp-smsenlinea-pro'), 'captured' => false]);
+         return;
+    }
+
+
+    // Preparamos el array de datos SIEMPRE incluyendo el país
     $cart_data = [
-        'first_name' => $first_name,
-        'phone' => $phone,
+        'first_name' => $first_name,        // Guardamos first_name por si billing_first_name falla
+        'phone' => $phone,              // Guardamos phone por si billing_phone falla
         'cart_contents' => $cart_contents,
         'cart_total' => $cart_total,
-        'billing_first_name' => $first_name,
+        'billing_first_name' => $first_name, // Usamos los mismos valores obtenidos
         'billing_last_name' => $last_name,
         'billing_email' => $email,
-        'billing_phone' => $phone,
+        'billing_phone' => $phone,          // Aseguramos que billing_phone tenga el valor principal
         'billing_address_1' => $address_1,
         'billing_city' => $city,
         'billing_state' => $state,
         'billing_postcode' => $postcode,
-        'billing_country' => $country,
+        'billing_country' => $country,      // Aseguramos que billing_country tenga el valor obtenido
         'updated_at' => $now,
     ];
 
+    // Log: Datos que se intentarán guardar/actualizar
+    error_log('WooWApp Capture: Data to be saved/updated: ' . print_r($cart_data, true));
+
     if ($existing) {
-        $wpdb->update(
+        // --- Actualizar el existente ---
+        error_log('WooWApp Capture: Updating existing cart ID: ' . $existing->id);
+        $result = $wpdb->update(
             $table,
-            $cart_data,
-            ['id' => $existing->id]
+            $cart_data, // Usamos el array completo que incluye el país
+            ['id' => $existing->id],
+            // Formatos para los datos a actualizar
+            ['%s', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'],
+            // Formato para el WHERE
+            ['%d']
         );
-        wp_send_json_success(['message' => __('Carrito actualizado', 'woowapp-smsenlinea-pro'), 'captured' => true]);
+
+        if ($result === false) {
+             error_log('WooWApp Capture Error: Failed to update cart ID ' . $existing->id . ' - DB Error: ' . $wpdb->last_error);
+             wp_send_json_error(['message' => __('Error al actualizar el carrito.', 'woowapp-smsenlinea-pro')]);
+        } else {
+             error_log('WooWApp Capture: Cart ID ' . $existing->id . ' updated successfully.');
+             wp_send_json_success(['message' => __('Carrito actualizado', 'woowapp-smsenlinea-pro'), 'captured' => true]);
+        }
+
     } else {
+        // --- Insertar nuevo ---
+        error_log('WooWApp Capture: Inserting new cart.');
+        // Añadir campos que solo van en la inserción
         $cart_data['session_id'] = $session_id;
         $cart_data['user_id'] = get_current_user_id();
         $cart_data['status'] = 'active';
         $cart_data['messages_sent'] = '0,0,0';
         $cart_data['created_at'] = $now;
         $cart_data['recovery_token'] = wp_generate_uuid4();
-        
-        $wpdb->insert($table, $cart_data);
-        wp_send_json_success(['message' => __('Carrito capturado', 'woowapp-smsenlinea-pro'), 'captured' => true]);
+
+        // Log antes de insertar
+        error_log('WooWApp Capture: Final data for insert: ' . print_r($cart_data, true));
+
+        $result = $wpdb->insert($table, $cart_data); // $wpdb->insert maneja los formatos automáticamente basado en el tipo de dato
+
+        if ($result === false) {
+             error_log('WooWApp Capture Error: Failed to insert new cart - DB Error: ' . $wpdb->last_error);
+             wp_send_json_error(['message' => __('Error al guardar el carrito nuevo.', 'woowapp-smsenlinea-pro')]);
+        } else {
+            $new_cart_id = $wpdb->insert_id;
+            error_log('WooWApp Capture: New cart inserted successfully with ID: ' . $new_cart_id);
+            wp_send_json_success(['message' => __('Carrito capturado', 'woowapp-smsenlinea-pro'), 'captured' => true]);
+        }
     }
 }
 
 // Inicializar el plugin
 
 WooWApp::get_instance();
+
 
