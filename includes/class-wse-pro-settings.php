@@ -1053,10 +1053,76 @@ class WSE_Pro_Settings {
             true
         );
         
-        wp_localize_script('wse-pro-admin-js', 'wse_pro_admin_params', [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce'    => wp_create_nonce('wse_pro_send_test_nonce')
-        ]);
+        wp_localize_script(
+            'wse-pro-admin-js', // Handle del script (nombre con el que se registró)
+            'wse_pro_admin_params', // Nombre del objeto que estará disponible en JavaScript
+            [ // Inicio del array principal de datos
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('wse_pro_send_test_nonce'), // Coma añadida aquí
+                // --- INICIO ARRAY i18n ---
+                'i18n'     => [
+                    'debugModeActive'      => __('%c🚀 WooWApp - Modo Debug Activo', 'woowapp-smsenlinea-pro'),
+                    'server'               => __('🖥️  Servidor:', 'woowapp-smsenlinea-pro'),
+                    'ajaxUrl'              => __('🔗 AJAX URL:', 'woowapp-smsenlinea-pro'),
+                    'noncePresent'         => __('✅ Nonce presente:', 'woowapp-smsenlinea-pro'),
+                    'customConfigFound'    => __('%c📋 Config personalizada encontrada', 'woowapp-smsenlinea-pro'),
+                    'fieldSelectorsLoaded' => __('%c📊 Selectores de campos cargados', 'woowapp-smsenlinea-pro'),
+                    'formFoundWith'        => __('✅ Formulario encontrado con selector:', 'woowapp-smsenlinea-pro'),
+                    'checkoutFormNotFound' => __('⚠️  No se encontró formulario de checkout', 'woowapp-smsenlinea-pro'),
+                    'noSelectorsFor'       => __('⚠️  No hay selectores configurados para:', 'woowapp-smsenlinea-pro'),
+                    'fieldFoundWith'       => __('✅ {fieldName} encontrado con selector:', 'woowapp-smsenlinea-pro'),
+                    'fieldNotFound'        => __('❌ Campo NO encontrado:', 'woowapp-smsenlinea-pro'),
+                    'fieldValueLog'        => __('✅ {fieldName}: "{value}"', 'woowapp-smsenlinea-pro'),
+                    'fieldDiagnostics'     => __('%c🔍 DIAGNÓSTICO DE CAMPOS', 'woowapp-smsenlinea-pro'),
+                    'notAvailable'         => __('N/A', 'woowapp-smsenlinea-pro'),
+                    'found'                => __('encontrado', 'woowapp-smsenlinea-pro'),
+                    'visible'              => __('visible', 'woowapp-smsenlinea-pro'),
+                    'type'                 => __('tipo', 'woowapp-smsenlinea-pro'),
+                    'value'                => __('valor', 'woowapp-smsenlinea-pro'),
+                    'totalFieldsFound'     => __('\n📊 Total de campos encontrados: {foundCount}/{totalCount}', 'woowapp-smsenlinea-pro'),
+                    'startingAjax'         => __('%c📤 Iniciando AJAX', 'woowapp-smsenlinea-pro'),
+                    'serverResponse'       => __('%c✅ Respuesta del servidor', 'woowapp-smsenlinea-pro'),
+                    'dataCapturedSuccess'  => __('%c🎉 Datos capturados exitosamente', 'woowapp-smsenlinea-pro'),
+                    'ajaxError'            => __('%c❌ Error AJAX', 'woowapp-smsenlinea-pro'),
+                    'requestTimeout'       => __('%c⏱️  Timeout - Petición tardó más de 15s', 'woowapp-smsenlinea-pro'),
+                    'processInProgress'    => __('⏳ Ya hay un proceso en curso, esperando...', 'woowapp-smsenlinea-pro'),
+                    'noEmailOrPhone'       => __('⏭️  Sin email ni teléfono - No capturar', 'woowapp-smsenlinea-pro'),
+                    'duplicateData'        => __('⏭️  Datos iguales a los previos - No enviar', 'woowapp-smsenlinea-pro'),
+                    'sendingData'          => __('%c📤 Enviando datos...', 'woowapp-smsenlinea-pro'),
+                    'attachingListeners'   => __('%c🔌 Adjuntando listeners a campos...', 'woowapp-smsenlinea-pro'),
+                    'fieldChanged'         => __('👁️  Campo cambió:', 'woowapp-smsenlinea-pro'),
+                    'select2Changed'       => __('✓ Select2 cambió', 'woowapp-smsenlinea-pro'),
+                    'eventCheckoutUpdated' => __('%c🔄 Evento: Checkout actualizado', 'woowapp-smsenlinea-pro'),
+                    'eventBlockChanged'    => __('%c🔄 Evento: Bloque WooCommerce cambió', 'woowapp-smsenlinea-pro'),
+                    'listenersAttached'    => __('%c✅ {count} listeners adjuntados correctamente', 'woowapp-smsenlinea-pro'),
+                    'formNotFoundWaiting'  => __('⏳ Formulario de checkout no encontrado aún. Esperando...', 'woowapp-smsenlinea-pro'),
+                    'formFoundSuccess'     => __('%c✅ Formulario de checkout ENCONTRADO', 'woowapp-smsenlinea-pro'),
+                    'initialCapture'       => __('%c📌 Ejecutando captura inicial', 'woowapp-smsenlinea-pro'),
+                    'periodicCapture'      => __('%c⏰ Captura periódica', 'woowapp-smsenlinea-pro'),
+                    'initSuccess'          => __('%c🎉 WooWApp inicializado correctamente', 'woowapp-smsenlinea-pro'),
+                    'initByCheckoutUpdate' => __('%c🔄 Inicialización por evento updated_checkout', 'woowapp-smsenlinea-pro'),
+                    'initByBlocksLoad'     => __('%c🔄 Inicialización por evento wc_blocks_loaded', 'woowapp-smsenlinea-pro'),
+                    'fieldTest'            => __('%c🧪 TEST DE CAMPOS', 'woowapp-smsenlinea-pro'),
+                    'sendingTestData'      => __('%c📤 Enviando datos de prueba...', 'woowapp-smsenlinea-pro'),
+                    'testTip'              => __('%c💡 Tip: Escribe wseTestFields() en la consola para probar la captura', 'woowapp-smsenlinea-pro'),
+                    // Claves para el botón regenerar y otras de admin.js
+                    'regenerateKeyConfirm' => __('¿Estás seguro de que quieres generar una nueva clave secreta? La URL anterior dejará de funcionar.', 'woowapp-smsenlinea-pro'),
+                    'regenerating' => __('Regenerando...', 'woowapp-smsenlinea-pro'),
+                    'insertError' => __('Error al insertar', 'woowapp-smsenlinea-pro'),
+                    'enterTestNumber' => __('Por favor, ingresa un número de teléfono para la prueba.', 'woowapp-smsenlinea-pro'),
+                    'sending' => __('Enviando...', 'woowapp-smsenlinea-pro'),
+                    'testSuccess' => __('✓ Mensaje enviado correctamente', 'woowapp-smsenlinea-pro'),
+                    'unknownError' => __('Error desconocido.', 'woowapp-smsenlinea-pro'),
+                    'serverConnectionError' => __('✗ Error de conexión con el servidor.', 'woowapp-smsenlinea-pro'),
+                    'connectionError' => __('✗ Error de conexión', 'woowapp-smsenlinea-pro'),
+                    'digitsOnlyWarning' => __('El número debe contener solo dígitos', 'woowapp-smsenlinea-pro'),
+                    'characters' => __(' caracteres', 'woowapp-smsenlinea-pro'),
+                    'unsavedChanges' => __('⚠ Cambios sin guardar', 'woowapp-smsenlinea-pro'),
+                    'scriptsLoaded' => __('✨ WooWApp Pro Admin Scripts Loaded Successfully!', 'woowapp-smsenlinea-pro')
+                ]
+                // --- FIN ARRAY i18n ---
+            ] // Fin del array principal de datos
+        ); // Fin de wp_localize_script
     }
 		/**
      * Obtiene (o genera si no existe) la clave secreta para el cron externo.
@@ -1116,3 +1182,4 @@ class WSE_Pro_Settings {
         ]);
     }
 }
+
