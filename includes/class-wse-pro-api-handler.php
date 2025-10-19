@@ -121,6 +121,38 @@ class WSE_Pro_API_Handler {
      * @return array              Respuesta de la operación.
      */
     public function send_message($phone, $message, $data_source = null, $type = 'customer') {
+        // --- INICIO: Verificación de Licencia General ---
+    if (!function_exists('wse_pro_is_license_active')) {
+        // Log de error crítico si la función auxiliar no existe
+        $this->log(__('Error Crítico: La función wse_pro_is_license_active() no existe. No se puede verificar la licencia.', 'woowapp-smsenlinea-pro'));
+        // Devolver error genérico para no exponer detalles internos
+        return ['success' => false, 'message' => __('Error interno de configuración.', 'woowapp-smsenlinea-pro')];
+    }
+
+    if (!wse_pro_is_license_active()) {
+        $license_page_url = admin_url('options-general.php?page=wse-pro-license');
+        $error_message = sprintf(
+            /* translators: %s: Link to license activation page */
+            esc_html__('Envío bloqueado: La licencia de WooWApp Pro no está activa. Por favor, %sactívala aquí%s.', 'woowapp-smsenlinea-pro'),
+            '<a href="' . esc_url($license_page_url) . '">',
+            '</a>'
+        );
+
+        // Registrar en el log por qué se bloqueó
+        $this->log(sprintf(__('Envío bloqueado para %s (Tipo: %s). Razón: Licencia inactiva.', 'woowapp-smsenlinea-pro'), $phone, $type));
+
+        // Añadir nota al pedido si aplica (solo para mensajes relacionados con pedidos)
+        if ($data_source && is_a($data_source, 'WC_Order')) {
+             $data_source->add_order_note(__('Envío de WhatsApp/SMS bloqueado: Licencia de WooWApp Pro inactiva.', 'woowapp-smsenlinea-pro'));
+        }
+
+        // Devolver error indicando el bloqueo
+        // Usamos un mensaje simple para la API, el detallado es para el log/nota
+        return ['success' => false, 'message' => __('Licencia de WooWApp Pro inactiva.', 'woowapp-smsenlinea-pro')];
+    }
+    
+    $selected_panel = get_option('wse_pro_api_panel_selection', 'panel2');
+    
         $selected_panel = get_option('wse_pro_api_panel_selection', 'panel2');
         
         // --- INICIO DE LA CORRECCIÓN ---
@@ -491,4 +523,5 @@ class WSE_Pro_API_Handler {
     }
 
 }
+
 
