@@ -1393,26 +1393,57 @@ private function get_review_form_html() {
         // El bloque que empezaba con: if ($reviews_submitted > 0 && 'yes' === get_option('wse_pro_enable_review_reward', 'no')) { ... }
         // HA SIDO ELIMINADO COMPLETAMENTE.
 
-        // --- MOSTRAR MENSAJE DE ÉXITO AJUSTADO ---
-        $success_message = '<div class="woowapp-review-success" style="background-color: #e6f7ff; border-left: 4px solid #1890ff; padding: 20px; margin: 20px 0; border-radius: 4px;">'; // Color azul para pendiente
-        $success_message .= '<h4 style="margin-top: 0; color: #0050b3;">' . __('¡Gracias por tu opinión!', 'woowapp-smsenlinea-pro') . '</h4>';
-        if ($reviews_submitted > 0) {
-             // Mensaje indicando que está pendiente
-             $success_message .= '<p>' . sprintf(_n('Tu reseña ha sido enviada y está pendiente de aprobación.', '%d reseñas han sido enviadas y están pendientes de aprobación.', $reviews_submitted, 'woowapp-smsenlinea-pro'), $reviews_submitted) . ' ' . __('Apreciamos mucho tu tiempo y tus comentarios.', 'woowapp-smsenlinea-pro') . '</p>';
-        }
-        if ($reviews_skipped > 0) {
-            $success_message .= '<p style="color: #718096; font-size: small;">' . sprintf(_n('Se omitió %d reseña porque ya habías dejado una opinión para ese producto.', 'Se omitieron %d reseñas porque ya habías dejado una opinión para esos productos.', $reviews_skipped, 'woowapp-smsenlinea-pro'), $reviews_skipped) . '</p>';
-        }
-         if ($reviews_failed > 0) {
-             $success_message .= '<p style="color: #c53030; font-size: small;">' . sprintf(_n('Hubo un problema al guardar %d reseña.', 'Hubo un problema al guardar %d reseñas.', $reviews_failed, 'woowapp-smsenlinea-pro'), $reviews_failed) . '</p>';
-        }
-        // --- MODIFICACIÓN: Eliminar mensaje sobre cupón enviado ---
-        // El bloque if ($coupon_generated_for_any && $coupon_data) { ... } ha sido eliminado.
-        // --- FIN MODIFICACIÓN ---
-         $success_message .= '<p><a href="' . esc_url(wc_get_page_permalink('shop')) . '" class="button">' . __('Volver a la tienda', 'woowapp-smsenlinea-pro') . '</a></p>';
-        $success_message .= '</div>';
+        // --- MOSTRAR MENSAJE DE ÉXITO AJUSTADO (USANDO OPCIÓN) ---
+    // Obtener el mensaje base desde las opciones, con un valor por defecto si no existe
+    $base_success_message = get_option(
+        'wse_pro_review_submitted_message',
+        // Valor por defecto si la opción no está guardada
+        __('¡Gracias por tu opinión! %%d reseña(s) han sido enviadas y están pendientes de aprobación. Apreciamos mucho tu tiempo y tus comentarios.', 'woowapp-smsenlinea-pro')
+    );
 
-        return $success_message;
+    // Reemplazar %%d con el número real de reseñas enviadas
+    // Usamos _n para manejar singular/plural correctamente en el texto por defecto
+    $reviews_text = sprintf(
+        _n(
+            'Tu reseña ha sido enviada y está pendiente de aprobación.',
+            '%d reseñas han sido enviadas y están pendientes de aprobación.',
+            $reviews_submitted,
+            'woowapp-smsenlinea-pro'
+        ),
+        $reviews_submitted
+    );
+    // Si el mensaje personalizado contiene %%d, lo reemplazamos. Si no, usamos el texto plural/singular generado.
+    if (strpos($base_success_message, '%%d') !== false) {
+         $formatted_message = sprintf(str_replace('%%d reseña(s)', '%d reseña(s)', $base_success_message), $reviews_submitted);
+    } else {
+         // Si el usuario borró %%d, usamos el texto estándar con pluralización
+         $base_success_message_no_count = __('¡Gracias por tu opinión!', 'woowapp-smsenlinea-pro'); // Asumimos que al menos el agradecimiento está
+         $formatted_message = $base_success_message_no_count . ' ' . $reviews_text . ' ' . __('Apreciamos mucho tu tiempo y tus comentarios.', 'woowapp-smsenlinea-pro');
+    }
+
+
+    // Construir el HTML final del mensaje
+    $success_message = '<div class="woowapp-review-success" style="background-color: #e6f7ff; border-left: 4px solid #1890ff; padding: 20px; margin: 20px 0; border-radius: 4px;">';
+    $success_message .= '<h4 style="margin-top: 0; color: #0050b3;">' . __('¡Gracias por tu opinión!', 'woowapp-smsenlinea-pro') . '</h4>'; // Mantenemos el título fijo
+
+    // Mostrar el mensaje principal (ahora editable) solo si se envió alguna reseña
+    if ($reviews_submitted > 0) {
+        $success_message .= '<p>' . esc_html($formatted_message) . '</p>';
+    }
+
+    // Añadir mensajes opcionales por reseñas omitidas o fallidas (igual que antes)
+    if ($reviews_skipped > 0) {
+        $success_message .= '<p style="color: #718096; font-size: small;">' . sprintf(_n('Se omitió %d reseña porque ya habías dejado una opinión para ese producto.', 'Se omitieron %d reseñas porque ya habías dejado una opinión para esos productos.', $reviews_skipped, 'woowapp-smsenlinea-pro'), $reviews_skipped) . '</p>';
+    }
+     if ($reviews_failed > 0) {
+         $success_message .= '<p style="color: #c53030; font-size: small;">' . sprintf(_n('Hubo un problema al guardar %d reseña.', 'Hubo un problema al guardar %d reseñas.', $reviews_failed, 'woowapp-smsenlinea-pro'), $reviews_failed) . '</p>';
+    }
+
+    // Botón para volver a la tienda (igual que antes)
+    $success_message .= '<p><a href="' . esc_url(wc_get_page_permalink('shop')) . '" class="button">' . __('Volver a la tienda', 'woowapp-smsenlinea-pro') . '</a></p>';
+    $success_message .= '</div>';
+
+    return $success_message; // Devuelve el mensaje construido
 
     } // --- FIN PROCESAMIENTO DEL FORMULARIO ---
 
@@ -2220,6 +2251,7 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
+
 
 
 
