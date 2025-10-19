@@ -494,9 +494,6 @@ final class WooWApp {
 add_action('wse_pro_send_abandoned_cart_1', [$this, 'debug_force_send_message'], 10, 1);
 add_action('wse_pro_send_abandoned_cart_2', [$this, 'debug_force_send_message'], 10, 1);
 add_action('wse_pro_send_abandoned_cart_3', [$this, 'debug_force_send_message'], 10, 1);
-// Hooks para la nueva lógica de reseñas
-        add_action('wp_insert_comment', [$this, 'notify_admin_on_pending_review'], 99, 2);
-        add_action('transition_comment_status', [$this, 'send_reward_on_review_approval'], 99, 3);
     }
 
     /**
@@ -1286,11 +1283,10 @@ $result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'custo
     }
 
    private function get_review_form_html() {
-        global $wpdb;
+        global $wpdb; // Necesitamos acceso a la base de datos
 
         // --- INICIO PROCESAMIENTO DEL FORMULARIO ---
-        // (Solo procesar si se envió el formulario principal 'submit_reviews')
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_reviews']) && isset($_POST['wse_review_nonce']) && isset($_POST['review_order_id'])) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['wse_review_nonce']) && isset($_POST['review_order_id'])) {
             if (!wp_verify_nonce($_POST['wse_review_nonce'], 'wse_submit_review')) {
                 return '<div class="woocommerce-error">' . __('Error de seguridad. Inténtalo de nuevo.', 'woowapp-smsenlinea-pro') . '</div>';
             }
@@ -1301,39 +1297,51 @@ $result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'custo
                 return '<div class="woocommerce-error">' . __('Pedido no válido.', 'woowapp-smsenlinea-pro') . '</div>';
             }
 
-            $reviews_submitted_count = 0;
-            $reviews_failed_count = 0;
-            $reviews_skipped_count = 0;
-            $submitted_comment_ids = []; // Guardar IDs para posible uso futuro
+            $reviews_submitted = 0;
+            $reviews_failed = 0;
+            $reviews_skipped = 0;
+            $highest_rating = 0; // Para determinar si se envía cupón
+            $coupon_generated_for_any = false; // Flag para enviar mensaje una sola vez
 
+            // Procesar cada producto enviado en el formulario
+            // Esperamos arrays como review_rating[item_id], review_comment[item_id], product_id[item_id]
             if (isset($_POST['product_id']) && is_array($_POST['product_id'])) {
                 foreach ($_POST['product_id'] as $item_id => $product_id_for_review) {
                     
-                    $item_id = absint($item_id);
-                    $product_id_for_review = absint($product_id_for_review);
+                    $item_id = absint($item_id); // ID del item en el pedido
+                    $product_id_for_review = absint($product_id_for_review); // ID del producto principal
                     $rating = isset($_POST['review_rating'][$item_id]) ? absint($_POST['review_rating'][$item_id]) : 0;
                     $comment_text = isset($_POST['review_comment'][$item_id]) ? sanitize_textarea_field(trim($_POST['review_comment'][$item_id])) : '';
 
+                    // Solo procesar si hay una calificación o un comentario
                     if ($rating === 0 && empty($comment_text)) {
-                        continue; // Saltar si no hay ni calificación ni comentario
+                        continue; // Saltar este producto si no se dejó reseña
                     }
-                    if ($rating === 0) $rating = 5; // Default 5 si hay texto pero no estrellas
+                    if ($rating === 0) $rating = 5; // Default a 5 estrellas si hay comentario pero no calificación explícita
 
-                    // Validar duplicados
+                    // Actualizar la calificación más alta para la lógica del cupón
+                    if ($rating > $highest_rating) {
+                        $highest_rating = $rating;
+                    }
+
+                    // --- INICIO VALIDACIÓN RESEÑA DUPLICADA ---
                     $existing_comments = get_comments([
                         'post_id' => $product_id_for_review,
                         'author_email' => $order->get_billing_email(),
                         'type' => 'review',
-                        'count' => true
+                        'count' => true // Solo necesitamos saber si existe (más eficiente)
                     ]);
+
                     if ($existing_comments > 0) {
-                        $reviews_skipped_count++;
-                        continue; // Saltar duplicado
+                        $reviews_skipped++;
+                        $this->log_info("Reseña duplicada omitida para producto #{$product_id_for_review} por {$order->get_billing_email()} (pedido #{$order_id})");
+                        continue; // Saltar al siguiente producto
                     }
+                    // --- FIN VALIDACIÓN RESEÑA DUPLICADA ---
 
                     $product = wc_get_product($product_id_for_review);
                     if (!$product) {
-                        $reviews_failed_count++;
+                        $reviews_failed++;
                         continue; // Saltar producto inválido
                     }
 
@@ -1343,45 +1351,110 @@ $result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'custo
                         'comment_post_ID'      => $product_id_for_review,
                         'comment_author'       => $order->get_billing_first_name(),
                         'comment_author_email' => $order->get_billing_email(),
+                        'comment_author_url'   => '',
                         'comment_content'      => $comment_text,
                         'comment_agent'        => 'WooWApp',
                         'comment_date'         => current_time('mysql'),
                         'user_id'              => $order->get_user_id() ?: 0,
-                        'comment_approved'     => 0, // <-- PUNTO 4: NO APROBAR AUTOMÁTICAMENTE
+                        'comment_approved'     => 1, // Auto-aprobar
                         'comment_type'         => 'review',
-                        'comment_meta'         => [ 'rating' => $rating, 'verified' => $verified ? 1 : 0 ],
+                        'comment_meta'         => [
+                            'rating'   => $rating,
+                            'verified' => $verified ? 1 : 0,
+                        ],
                     ];
 
                     // Insertar la reseña
                     $comment_id = wp_insert_comment($commentdata);
 
                     if ($comment_id && !is_wp_error($comment_id)) {
-                        $reviews_submitted_count++;
-                        $submitted_comment_ids[] = $comment_id; // Guardar ID
-                        // NO actualizamos contadores ni enviamos agradecimiento aquí
+                        // wp_insert_comment ya dispara los hooks necesarios, NO necesitamos do_action aquí.
+                        wc_update_product_review_count($product_id_for_review);
+                        $reviews_submitted++;
                     } else {
-                        $reviews_failed_count++;
-                        // Log de error (opcional)
+                        $reviews_failed++;
+                         $error_msg = is_wp_error($comment_id) ? $comment_id->get_error_message() : 'Error desconocido al guardar reseña.';
+                         $this->log_error("Fallo al guardar reseña para producto #{$product_id_for_review} (pedido #{$order_id}). Razón: {$error_msg}");
                     }
                 } // Fin foreach producto
             } // Fin if isset($_POST['product_id'])
 
-            // --- MOSTRAR MENSAJE DE ÉXITO PERSONALIZADO (MODIFICADO) ---
-            $final_message = '<div class="woowapp-review-success" style="background-color: #e6fffa; border-left: 4px solid #38b2ac; padding: 20px; margin: 20px 0; border-radius: 4px;">';
-            $final_message .= '<h4 style="margin-top: 0; color: #2c7a7b;">' . __('¡Gracias por tu opinión!', 'woowapp-smsenlinea-pro') . '</h4>';
-            if ($reviews_submitted_count > 0) {
-                 $final_message .= '<p>' . sprintf(_n('Tu reseña ha sido enviada para aprobación.', '%d reseñas han sido enviadas para aprobación.', $reviews_submitted_count, 'woowapp-smsenlinea-pro'), $reviews_submitted_count) . ' ' . __('Apreciamos mucho tu tiempo.', 'woowapp-smsenlinea-pro') . '</p>';
+            // --- ENVIAR MENSAJE DE AGRADECIMIENTO/RECOMPENSA (UNA SOLA VEZ SI SE ENVIÓ AL MENOS UNA RESEÑA) ---
+            if ($reviews_submitted > 0 && 'yes' === get_option('wse_pro_enable_review_reward', 'no')) {
+                $coupon_data = null;
+                $coupon_generated = false;
+
+                // Verificar si se debe generar cupón basado en la calificación MÁS ALTA
+                $enable_coupon = get_option('wse_pro_review_reward_coupon_enable', 'no');
+                $min_rating = (int) get_option('wse_pro_review_reward_min_rating', 4);
+
+                if ('yes' === $enable_coupon && $highest_rating >= $min_rating) {
+                    $coupon_manager = WSE_Pro_Coupon_Manager::get_instance();
+                    $coupon_args = [ /* ... (igual que antes) ... */ 
+                            'discount_type'   => get_option('wse_pro_review_reward_coupon_type', 'percent'),
+                            'discount_amount' => (float) get_option('wse_pro_review_reward_coupon_amount', 15),
+                            'expiry_days'     => (int) get_option('wse_pro_review_reward_coupon_expiry', 14),
+                            'customer_phone'  => $order->get_billing_phone(), 
+                            'customer_email'  => $order->get_billing_email(), 
+                            'order_id'        => $order_id, 
+                            'coupon_type'     => 'review_reward', 
+                            'prefix'          => get_option('wse_pro_review_reward_coupon_prefix', 'RESEÑA')
+                    ];
+                    $coupon_result = $coupon_manager->generate_coupon($coupon_args);
+
+                    if (!is_wp_error($coupon_result) && isset($coupon_result['success']) && $coupon_result['success']) {
+                        $coupon_data = $coupon_result;
+                        $coupon_generated = true;
+                        $coupon_generated_for_any = true; // Marcamos que se generó
+                        $this->log_info("Cupón recompensa {$coupon_data['coupon_code']} generado para pedido #{$order_id} por reseña.");
+                    } else {
+                         $error_msg = is_wp_error($coupon_result) ? $coupon_result->get_error_message() : 'Error desconocido al generar cupón.';
+                         $this->log_error("Fallo al generar cupón recompensa pedido #{$order_id}. Razón: {$error_msg}");
+                    }
+                }
+
+                // Preparar y enviar mensaje (una sola vez)
+                $template = get_option('wse_pro_review_reward_message');
+                if (!empty($template)) {
+                    $api_handler = new WSE_Pro_API_Handler();
+                    $placeholders_extras = [];
+                    if($coupon_data){
+                         $placeholders_extras['{coupon_code}'] = $coupon_data['coupon_code'] ?? '';
+                         $placeholders_extras['{coupon_amount}'] = $coupon_data['formatted_discount'] ?? '';
+                         $placeholders_extras['{coupon_expires}'] = $coupon_data['formatted_expiry'] ?? '';
+                    }
+                    $message = WSE_Pro_Placeholders::replace($template, $order, $placeholders_extras);
+                    $customer_phone = $order->get_billing_phone();
+                    if (!empty($customer_phone)) {
+                         $api_handler->send_message($customer_phone, $message, $order, 'customer');
+                         $this->log_info("Mensaje agradecimiento por reseña(s) enviado pedido #{$order_id}.");
+                    } else {
+                        $this->log_warning("No se envió agradecimiento (pedido #{$order_id}) - Teléfono vacío.");
+                    }
+                } else {
+                     $this->log_warning("No se envió agradecimiento (pedido #{$order_id}) - Plantilla vacía.");
+                }
+            } // Fin if ($reviews_submitted > 0 && agradecimiento activado)
+
+            // --- MOSTRAR MENSAJE DE ÉXITO PERSONALIZADO ---
+            $success_message = '<div class="woowapp-review-success" style="background-color: #e6fffa; border-left: 4px solid #38b2ac; padding: 20px; margin: 20px 0; border-radius: 4px;">';
+            $success_message .= '<h4 style="margin-top: 0; color: #2c7a7b;">' . __('¡Gracias por tu opinión!', 'woowapp-smsenlinea-pro') . '</h4>';
+            if ($reviews_submitted > 0) {
+                 $success_message .= '<p>' . sprintf(_n('Tu reseña ha sido publicada.', '%d reseñas han sido publicadas.', $reviews_submitted, 'woowapp-smsenlinea-pro'), $reviews_submitted) . ' ' . __('Apreciamos mucho tu tiempo y tus comentarios.', 'woowapp-smsenlinea-pro') . '</p>';
             }
-             if ($reviews_skipped_count > 0) {
-                $final_message .= '<p style="color: #718096; font-size: small;">' . sprintf(_n('Se omitió %d reseña porque ya habías dejado una opinión para ese producto.', 'Se omitieron %d reseñas porque ya habías dejado una opinión para esos productos.', $reviews_skipped_count, 'woowapp-smsenlinea-pro'), $reviews_skipped_count) . '</p>';
+            if ($reviews_skipped > 0) {
+                $success_message .= '<p style="color: #718096; font-size: small;">' . sprintf(_n('Se omitió %d reseña porque ya habías dejado una opinión para ese producto.', 'Se omitieron %d reseñas porque ya habías dejado una opinión para esos productos.', $reviews_skipped, 'woowapp-smsenlinea-pro'), $reviews_skipped) . '</p>';
             }
-             if ($reviews_failed_count > 0) {
-                 $final_message .= '<p style="color: #c53030; font-size: small;">' . sprintf(_n('Hubo un problema al guardar %d reseña.', 'Hubo un problema al guardar %d reseñas.', $reviews_failed_count, 'woowapp-smsenlinea-pro'), $reviews_failed_count) . '</p>';
+             if ($reviews_failed > 0) {
+                 $success_message .= '<p style="color: #c53030; font-size: small;">' . sprintf(_n('Hubo un problema al guardar %d reseña.', 'Hubo un problema al guardar %d reseñas.', $reviews_failed, 'woowapp-smsenlinea-pro'), $reviews_failed) . '</p>';
             }
-            $final_message .= '<p><a href="' . esc_url(wc_get_page_permalink('shop')) . '" class="button">' . __('Volver a la tienda', 'woowapp-smsenlinea-pro') . '</a></p>';
-            $final_message .= '</div>';
+            if ($coupon_generated_for_any && $coupon_data) {
+                 $success_message .= '<p>' . sprintf( __('Hemos enviado un cupón de agradecimiento (%s) a tu WhatsApp/SMS.', 'woowapp-smsenlinea-pro'), '<strong>' . esc_html($coupon_data['coupon_code']) . '</strong>' ) . '</p>';
+            }
+             $success_message .= '<p><a href="' . esc_url(wc_get_page_permalink('shop')) . '" class="button">' . __('Volver a la tienda', 'woowapp-smsenlinea-pro') . '</a></p>';
+            $success_message .= '</div>';
             
-            return $final_message; // Mostramos el resumen y terminamos
+            return $success_message;
 
         } // --- FIN PROCESAMIENTO DEL FORMULARIO ---
 
@@ -1399,7 +1472,8 @@ $result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'custo
                     $order->get_order_number()
                 ) . '</h3>';
                 
-                $html .= '<form method="post" class="woowapp-review-form">'; // Formulario único
+                // Abrir el formulario principal
+                $html .= '<form method="post" class="woowapp-review-form">';
                 $html .= wp_nonce_field('wse_submit_review', 'wse_review_nonce', true, false);
                 $html .= '<input type="hidden" name="review_order_id" value="' . esc_attr($order_id) . '" />';
 
@@ -1408,32 +1482,28 @@ $result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'custo
                     if (!$product) continue;
                     $product_id_for_review = $product->is_type('variation') ? $product->get_parent_id() : $product->get_id();
 
-                    $existing_comments = get_comments([ /* ... (igual que antes) ... */
+                    // --- INICIO VALIDACIÓN RESEÑA EXISTENTE (para mostrar o no el form) ---
+                     $existing_comments = get_comments([
                         'post_id' => $product_id_for_review,
                         'author_email' => $order->get_billing_email(),
                         'type' => 'review',
                         'count' => true 
                     ]);
+                    // --- FIN VALIDACIÓN RESEÑA EXISTENTE ---
 
-                    $html .= '<div class="review-form-wrapper" style="border:1px solid #ddd; padding:20px; margin-bottom:20px; border-radius: 5px; display: flex; gap: 20px; align-items: flex-start;">';
-                    
-                    // --- PUNTO 2: AÑADIR IMAGEN DEL PRODUCTO ---
-                    $image_html = $product->get_image('thumbnail', ['style' => 'width: 80px; height: auto; border-radius: 4px;']); // Tamaño 'thumbnail'
-                    $html .= '<div class="review-product-image" style="flex-shrink: 0;">' . $image_html . '</div>';
-                    // --- FIN AÑADIR IMAGEN ---
 
-                    $html .= '<div class="review-product-fields" style="flex-grow: 1;">'; // Div para los campos
-                    $html .= '<h4 style="margin-top:0;">' . esc_html($product->get_name()) . '</h4>';
+                    $html .= '<div class="review-form-wrapper" style="border:1px solid #ddd; padding:20px; margin-bottom:20px; border-radius: 5px;">';
+                    $html .= '<h4>' . esc_html($product->get_name()) . '</h4>';
                     
                     if ($existing_comments > 0) {
                          $html .= '<p class="woocommerce-info">' . __('Ya has dejado una reseña para este producto.', 'woowapp-smsenlinea-pro') . '</p>';
                     } else {
-                        // Campos solo si no hay reseña previa
+                        // Solo mostrar campos si no hay reseña previa
                         $html .= '<input type="hidden" name="product_id[' . esc_attr($item_id) . ']" value="' . esc_attr($product_id_for_review) . '" />'; 
                         
                         $html .= '<p class="comment-form-rating">';
                         $html .= '<label for="review_rating-' . esc_attr($item_id) . '">' . __('Tu calificación', 'woowapp-smsenlinea-pro') . '&nbsp;<span class="required">*</span></label>';
-                        $html .= '<select name="review_rating[' . esc_attr($item_id) . ']" id="review_rating-' . esc_attr($item_id) . '" required style="width: auto;">';
+                        $html .= '<select name="review_rating[' . esc_attr($item_id) . ']" id="review_rating-' . esc_attr($item_id) . '" required style="width: auto;">'; // Nombre como array
                         $html .= '<option value="5" selected>⭐⭐⭐⭐⭐</option>'; 
                         $html .= '<option value="4">⭐⭐⭐⭐</option>';     
                         $html .= '<option value="3">⭐⭐⭐</option>';       
@@ -1443,27 +1513,30 @@ $result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'custo
                         
                         $html .= '<p class="comment-form-comment">';
                         $html .= '<label for="review_comment-' . esc_attr($item_id) . '">' . __('Tu reseña', 'woowapp-smsenlinea-pro') . ' (Opcional)</label>';
-                        $html .= '<textarea name="review_comment[' . esc_attr($item_id) . ']" id="review_comment-' . esc_attr($item_id) . '" cols="45" rows="4" style="width:100%;"></textarea>';
+                        $html .= '<textarea name="review_comment[' . esc_attr($item_id) . ']" id="review_comment-' . esc_attr($item_id) . '" cols="45" rows="4" style="width:100%;"></textarea>'; // Nombre como array
                         $html .= '</p>';
                     }
-                    $html .= '</div>'; // Fin review-product-fields
                     $html .= '</div>'; // Fin review-form-wrapper
                 } // Fin foreach item
 
-                $html .= '<p class="form-submit">';
-                $html .= '<input name="submit_reviews" type="submit" class="submit button button-primary" value="' . __('Enviar Reseñas Pendientes', 'woowapp-smsenlinea-pro') . '" />';
-                $html .= '</p>';
-                $html .= '</form>'; // Cerrar form principal
+                // Botón de envío principal fuera del loop
+                 $html .= '<p class="form-submit">';
+                 $html .= '<input name="submit_reviews" type="submit" class="submit button button-primary" value="' . __('Enviar Todas las Reseñas', 'woowapp-smsenlinea-pro') . '" />';
+                 $html .= '</p>';
+                $html .= '</form>'; // Cerrar el formulario principal
                 
                 $html .= '</div>'; // Fin woowapp-review-container
                 return $html;
-            } else { /* ... (código si la clave no es válida) ... */ 
-                return '<div class="woocommerce-error">' . __('El enlace de reseña no es válido o ha caducado.', 'woowapp-smsenlinea-pro') . '</div>';
+            } else {
+                return '<div class="woocommerce-error">' . 
+                       __('El enlace de reseña no es válido o ha caducado.', 'woowapp-smsenlinea-pro') . 
+                       '</div>';
             }
         }
         
-       /* ... (código si no hay order_id y key) ... */
-       return '<div class="woocommerce-info">' . __('Para dejar una reseña, por favor usa el enlace proporcionado en el mensaje.', 'woowapp-smsenlinea-pro') . '</div>';
+        return '<div class="woocommerce-info">' . 
+               __('Para dejar una reseña, por favor usa el enlace proporcionado en el mensaje.', 'woowapp-smsenlinea-pro') . 
+               '</div>';
         // --- FIN MOSTRAR EL FORMULARIO ---
     }
 
@@ -1794,150 +1867,9 @@ public function debug_force_send_message($cart_id) {
         }
     }
 }
-public function notify_admin_on_pending_review($comment_id, $comment_object) {
-        // Verificar si es una reseña y si está pendiente (approved = 0)
-        if ($comment_object->comment_type === 'review' && $comment_object->comment_approved == '0') {
-            
-            // Verificar si la notificación está activada
-            if ('yes' === get_option('wse_pro_enable_admin_pending_review', 'no')) {
-                $template = get_option('wse_pro_admin_message_pending_review');
-                $admin_numbers_raw = get_option('wse_pro_admin_numbers', '');
-                $admin_numbers = array_filter(array_map('trim', explode("\n", $admin_numbers_raw)));
-
-                if (!empty($template) && !empty($admin_numbers)) {
-                    $order_id = 0;
-                    // Intentar obtener el Order ID si está asociado (puede que no siempre esté disponible directamente)
-                    // Podríamos buscarlo por email y producto, pero simplificamos por ahora
-                    // $order = wc_get_orders(['customer' => $comment_object->comment_author_email, 'limit' => 1]); // Ejemplo
-                    
-                    $product = wc_get_product($comment_object->comment_post_ID);
-                    $rating = get_comment_meta($comment_id, 'rating', true);
-
-                    // Placeholders básicos para la notificación
-                    $extras = [
-                        '{customer_fullname}' => $comment_object->comment_author,
-                        '{order_id}' => $order_id > 0 ? $order_id : __('N/A', 'woowapp-smsenlinea-pro'), // Opcional
-                        '{first_product_name}' => $product ? $product->get_name() : __('Producto Desconocido', 'woowapp-smsenlinea-pro'),
-                        '{review_rating}' => $rating ? $rating : __('N/A', 'woowapp-smsenlinea-pro'),
-                        '{review_content}' => $comment_object->comment_content,
-                    ];
-                    
-                    // Usamos un pedido FALSO (null) para la función replace, ya que no tenemos un pedido real fácil aquí
-                    // y los placeholders principales vienen de $extras
-                    $message = WSE_Pro_Placeholders::replace($template, null, $extras); 
-
-                    $api_handler = new WSE_Pro_API_Handler();
-                    foreach ($admin_numbers as $number) {
-                        $api_handler->send_message($number, $message, null, 'admin'); // Pasamos null como $data_source
-                    }
-                     $this->log_info("Notificación de reseña pendiente enviada a administradores para comentario #{$comment_id}");
-                }
-            }
-        }
-    }
-
-    /**
-     * PUNTO 5: Envía el mensaje de agradecimiento/cupón CUANDO se aprueba la reseña.
-     * Se activa cuando cambia el estado de un comentario.
-     */
-    public function send_reward_on_review_approval($new_status, $old_status, $comment) {
-        // Verificar si es una reseña, si se acaba de aprobar y si antes no estaba aprobada
-        if ($comment->comment_type === 'review' && $new_status === 'approve' && $old_status !== 'approve') {
-            
-            // Verificar si el agradecimiento está activo
-             if ('yes' === get_option('wse_pro_enable_review_reward', 'no')) {
-                 $comment_id = $comment->comment_ID;
-                 $rating = get_comment_meta($comment_id, 'rating', true);
-                 
-                 // Necesitamos el Pedido original para los placeholders y el teléfono
-                 // Buscamos un pedido asociado al email del autor de la reseña y que contenga el producto reseñado
-                 $order = null;
-                 $orders = wc_get_orders([
-                     'limit' => 1, // El más reciente suele ser suficiente
-                     'customer' => $comment->comment_author_email,
-                     'status' => array_keys(wc_get_order_statuses()), // Cualquier estado
-                     'orderby' => 'date',
-                     'order' => 'DESC',
-                 ]);
-                 
-                 if (!empty($orders)) {
-                     // Podríamos verificar si el producto está en este pedido, pero por simplicidad usamos el más reciente
-                     $order = $orders[0]; 
-                 }
-
-                 if (!$order) {
-                      $this->log_warning("No se encontró pedido asociado para enviar recompensa reseña #{$comment_id}.");
-                      return; // No podemos enviar sin un pedido
-                 }
-                 
-                 $coupon_data = null;
-                 $coupon_generated = false;
-
-                // Verificar si se debe generar cupón
-                $enable_coupon = get_option('wse_pro_review_reward_coupon_enable', 'no');
-                $min_rating = (int) get_option('wse_pro_review_reward_min_rating', 4);
-
-                if ('yes' === $enable_coupon && $rating >= $min_rating) {
-                    $coupon_manager = WSE_Pro_Coupon_Manager::get_instance();
-                    $coupon_args = [ /* ... (igual que antes) ... */ 
-                            'discount_type'   => get_option('wse_pro_review_reward_coupon_type', 'percent'),
-                            'discount_amount' => (float) get_option('wse_pro_review_reward_coupon_amount', 15),
-                            'expiry_days'     => (int) get_option('wse_pro_review_reward_coupon_expiry', 14),
-                            'customer_phone'  => $order->get_billing_phone(), 
-                            'customer_email'  => $order->get_billing_email(), 
-                            'order_id'        => $order->get_id(), // Usamos el ID del pedido encontrado
-                            'coupon_type'     => 'review_reward', 
-                            'prefix'          => get_option('wse_pro_review_reward_coupon_prefix', 'RESEÑA')
-                    ];
-                    $coupon_result = $coupon_manager->generate_coupon($coupon_args);
-
-                    if (!is_wp_error($coupon_result) && isset($coupon_result['success']) && $coupon_result['success']) {
-                        $coupon_data = $coupon_result;
-                        $coupon_generated = true;
-                        $this->log_info("Cupón recompensa {$coupon_data['coupon_code']} generado para pedido #{$order->get_id()} por aprobación reseña #{$comment_id}.");
-                    } else {
-                         $error_msg = is_wp_error($coupon_result) ? $coupon_result->get_error_message() : 'Error desconocido al generar cupón.';
-                         $this->log_error("Fallo al generar cupón recompensa pedido #{$order->get_id()} (reseña #{$comment_id}). Razón: {$error_msg}");
-                    }
-                } // Fin if cupón activado y rating suficiente
-
-                // Preparar y enviar mensaje
-                $template = get_option('wse_pro_review_reward_message');
-                if (!empty($template)) {
-                    $api_handler = new WSE_Pro_API_Handler();
-                    $placeholders_extras = [];
-                    if($coupon_data){
-                         $placeholders_extras['{coupon_code}'] = $coupon_data['coupon_code'] ?? '';
-                         $placeholders_extras['{coupon_amount}'] = $coupon_data['formatted_discount'] ?? '';
-                         $placeholders_extras['{coupon_expires}'] = $coupon_data['formatted_expiry'] ?? '';
-                    }
-                    // Añadir placeholders específicos de la reseña
-                    $placeholders_extras['{review_rating}'] = $rating;
-                    $placeholders_extras['{review_content}'] = $comment->comment_content;
-
-                    $message = WSE_Pro_Placeholders::replace($template, $order, $placeholders_extras);
-                    $customer_phone = $order->get_billing_phone();
-                    if (!empty($customer_phone)) {
-                         $api_handler->send_message($customer_phone, $message, $order, 'customer');
-                         $this->log_info("Mensaje agradecimiento/recompensa enviado para reseña #{$comment_id} (pedido #{$order->get_id()}).");
-                    } else {
-                        $this->log_warning("No se envió agradecimiento/recompensa (reseña #{$comment_id}) - Teléfono vacío en pedido #{$order->get_id()}.");
-                    }
-                } else {
-                     $this->log_warning("No se envió agradecimiento/recompensa (reseña #{$comment_id}) - Plantilla vacía.");
-                }
-             } // Fin if agradecimiento activado
-        } // Fin if reseña aprobada
-    }
-/**
-     * PUNTO 3: Notifica al Admin cuando una nueva reseña queda pendiente.
-     * Se activa cuando se inserta un comentario.
-     */
-    
 // Nueva función para manejar la captura de carrito sin duplicados
 add_action('wp_ajax_wse_pro_capture_cart', 'handle_cart_capture');
 add_action('wp_ajax_nopriv_wse_pro_capture_cart', 'handle_cart_capture');
-
 
 function handle_cart_capture() {
     if (!check_ajax_referer('wse_pro_capture_cart_nonce', 'nonce', false)) {
@@ -2048,10 +1980,6 @@ function handle_cart_capture() {
 }
 // Inicializar el plugin
 WooWApp::get_instance();
-
-
-
-
 
 
 
