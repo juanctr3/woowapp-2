@@ -73,7 +73,7 @@ jQuery(function($) {
         
         if (!$textarea.length) {
             console.error('Textarea target not found: ' + targetId);
-            showNotification('Error al insertar', 'error');
+            showNotification(wse_pro_admin_params.i18n.insertError, 'error');
             return;
         }
 
@@ -111,7 +111,7 @@ jQuery(function($) {
         var testNumber = $('#wse_pro_test_number').val();
 
         if (!testNumber) {
-            showNotification('Por favor, ingresa un número de teléfono para la prueba.', 'error');
+            showNotification(wse_pro_admin_params.i18n.enterTestNumber, 'error');
             $('#wse_pro_test_number').addClass('input-error').focus();
             setTimeout(function() {
                 $('#wse_pro_test_number').removeClass('input-error');
@@ -121,7 +121,7 @@ jQuery(function($) {
 
         // Estado de carga
         $button.prop('disabled', true).addClass('button-loading');
-        $statusSpan.html('<span class="spinner is-active" style="float:left; margin-top:2px;"></span> Enviando...')
+        $statusSpan.html('<span class="spinner is-active" style="float:left; margin-top:2px;"></span> ' + wse_pro_admin_params.i18n.sending)
             .css({
                 'color': '#6366f1',
                 'background': '#eef2ff',
@@ -146,9 +146,9 @@ jQuery(function($) {
                             'background': 'linear-gradient(135deg, #10b981, #059669)',
                             'box-shadow': '0 4px 6px rgba(16, 185, 129, 0.3)'
                         });
-                    showNotification('✓ Mensaje enviado correctamente', 'success');
+                    showNotification(wse_pro_admin_params.i18n.testSuccess, 'success');
                 } else {
-                    var errorMessage = response.data.message ? response.data.message : 'Error desconocido.';
+                    var errorMessage = response.data.message ? response.data.message : wse_pro_admin_params.i18n.unknownError;
                     $statusSpan.html('✗ ' + errorMessage)
                         .css({
                             'color': 'white',
@@ -159,13 +159,13 @@ jQuery(function($) {
                 }
             },
             error: function() {
-                $statusSpan.html('✗ Error de conexión con el servidor.')
+                $statusSpan.html(wse_pro_admin_params.i18n.serverConnectionError)
                     .css({
                         'color': 'white',
                         'background': 'linear-gradient(135deg, #ef4444, #dc2626)',
                         'box-shadow': '0 4px 6px rgba(239, 68, 68, 0.3)'
                     });
-                showNotification('✗ Error de conexión', 'error');
+                showNotification(wse_pro_admin_params.i18n.connectionError, 'error');
             },
             complete: function() {
                 $button.prop('disabled', false).removeClass('button-loading');
@@ -230,7 +230,7 @@ jQuery(function($) {
         
         if (value && !/^\d+$/.test(value)) {
             $input.addClass('input-error');
-            showNotification('El número debe contener solo dígitos', 'warning');
+            showNotification(wse_pro_admin_params.i18n.digitsOnlyWarning, 'warning');
         } else {
             $input.removeClass('input-error');
         }
@@ -257,7 +257,7 @@ jQuery(function($) {
         function updateCounter() {
             var length = $textarea.val().length;
             var color = length > maxLength * 0.9 ? '#ef4444' : '#6b7280';
-            $counter.html(length + ' / ' + maxLength + ' caracteres').css('color', color);
+            $counter.html(length + ' / ' + maxLength + wse_pro_admin_params.i18n.characters).css('color', color);
         }
         
         updateCounter();
@@ -288,7 +288,7 @@ jQuery(function($) {
                     'z-index': 9999,
                     'display': 'none'
                 })
-                .html('⚠ Cambios sin guardar')
+                .html(wse_pro_admin_params.i18n.unsavedChanges)
                 .appendTo('body');
         }
         
@@ -366,5 +366,5 @@ jQuery(function($) {
         `)
         .appendTo('head');
 
-    console.log('✨ WooWApp Pro Admin Scripts Loaded Successfully!');
+    console.log(wse_pro_admin_params.i18n.scriptsLoaded);
 });

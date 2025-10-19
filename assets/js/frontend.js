@@ -30,14 +30,14 @@ jQuery(function($) {
             checkout_data: checkout_data
         };
 
-        console.log('WooWApp: Evento detectado. Enviando datos al servidor...', data);
+        console.log(wse_pro_frontend_params.i18n.eventDetected, data);
 
         // Envía la información al servidor de forma asíncrona.
         $.post(wse_pro_frontend_params.ajax_url, data, function(response) {
             if (response.success) {
-                console.log('WooWApp: Carrito capturado exitosamente por el servidor.');
+                console.log(wse_pro_frontend_params.i18n.captureSuccess);
             } else {
-                console.log('WooWApp: El servidor devolvió un error al capturar el carrito.', response);
+                console.log(wse_pro_frontend_params.i18n.captureError, response);
             }
         });
     };
@@ -62,5 +62,5 @@ jQuery(function($) {
 
     $(document.body).on('blur', selectors, captureCartHandler);
 
-    console.log('WooWApp: Script de captura de carrito cargado y listo.');
+    console.log(wse_pro_frontend_params.i18n.scriptLoaded);
 });
