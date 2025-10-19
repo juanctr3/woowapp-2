@@ -597,6 +597,17 @@ class WSE_Pro_Settings {
                 'desc'        => __('Base para el código del cupón, ej: GRACIAS', 'woowapp-smsenlinea-pro'),
                 'desc_tip'    => true,
             ],
+            // Nuevo campo para mensaje de reseña enviada
+        [
+            'name' => __('Mensaje Reseña Enviada (Pendiente)', 'woowapp-smsenlinea-pro'),
+            'type' => 'textarea',
+            'id' => 'wse_pro_review_submitted_message',
+            'css' => 'width:100%; height:90px;',
+            'default' => __('¡Gracias por tu opinión! %%d reseña(s) han sido enviadas y están pendientes de aprobación. Apreciamos mucho tu tiempo y tus comentarios.', 'woowapp-smsenlinea-pro'),
+            'desc' => __('Mensaje mostrado al cliente tras enviar la reseña. Usa <code>%%d</code> donde quieras mostrar el número de reseñas enviadas.', 'woowapp-smsenlinea-pro'),
+            'desc_tip' => true
+        ],
+        
             ['type' => 'sectionend', 'id' => 'wse_pro_review_reward_end'],
             // === FIN NUEVA SECCIÓN ===
 
@@ -1001,4 +1012,5 @@ class WSE_Pro_Settings {
         ]);
     }
 }
+
 
