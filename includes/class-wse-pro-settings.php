@@ -24,6 +24,7 @@ class WSE_Pro_Settings {
         add_action('woocommerce_update_options_woowapp', [$this, 'update_settings']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
         add_action('wp_ajax_wse_pro_send_test', [WSE_Pro_API_Handler::class, 'ajax_send_test_whatsapp']);
+		add_action('wp_ajax_wse_regenerate_cron_key', [$this, 'ajax_regenerate_cron_key']);
         
         // Registrar tipos de campos personalizados
         add_action('woocommerce_admin_field_textarea_with_pickers', [$this, 'render_textarea_with_pickers']);
@@ -316,6 +317,52 @@ class WSE_Pro_Settings {
                     esc_html($log_handle)
                 )
             ],
+            // === INICIO: Cron Externo ===
+            [
+                'name' => __('Alternativa de Cron (Externo)', 'woowapp-smsenlinea-pro'),
+                'type' => 'title',
+                'id' => 'wse_pro_external_cron_title',
+                /* translators: %s: Enlace a un servicio de cron externo */
+                'desc' => sprintf(
+                    __('Si WP-Cron no funciona bien en tu servidor, puedes usar un servicio externo (como <a href="%s" target="_blank">cron-job.org</a>) para llamar a la siguiente URL cada 5-10 minutos. Esto ejecutará la revisión de carritos abandonados.', 'woowapp-smsenlinea-pro'),
+                    'https://cron-job.org/'
+                )
+            ],
+            [
+                'name' => __('Clave Secreta de Cron', 'woowapp-smsenlinea-pro'),
+                'type' => 'text', // Usamos 'text' para poder hacerlo readonly
+                'id' => 'wse_pro_cron_secret_key_display', // ID diferente para evitar que se guarde desde aquí
+                'desc' => __('Esta clave asegura que solo tú o un servicio autorizado pueda ejecutar la tarea.', 'woowapp-smsenlinea-pro'),
+                'desc_tip' => true,
+                'custom_attributes' => [
+                    'readonly' => 'readonly', // Hacer el campo no editable
+                    'value' => esc_attr(self::get_cron_secret_key()), // Mostrar la clave actual
+                    'onclick' => 'this.select();', // Seleccionar al hacer clic
+                    'style' => 'width: 400px; background-color: #f0f0f0; cursor: text;' // Estilo visual
+                ]
+            ],
+            [
+                'name' => __('URL de Disparo (Trigger)', 'woowapp-smsenlinea-pro'),
+                'type' => 'text', // Usamos 'text' para poder hacerlo readonly
+                'id'   => 'wse_pro_cron_trigger_url_display',
+                'desc' => __('Copia esta URL y pégala en tu servicio de cron externo.', 'woowapp-smsenlinea-pro'),
+                'desc_tip' => true,
+                'custom_attributes' => [
+                    'readonly' => 'readonly',
+                    'value' => esc_url(self::get_cron_trigger_url()), // Mostrar la URL completa
+                    'onclick' => 'this.select();',
+                    'style' => 'width: 100%; max-width: 600px; background-color: #f0f0f0; cursor: text;'
+                ]
+            ],
+            [
+                'name' => '', // Sin etiqueta
+                'type' => 'button', // Usaremos el tipo botón que ya definimos
+                'id' => 'wse_pro_regenerate_cron_key_button',
+                'class' => 'button-secondary',
+                'value' => __('🔄 Regenerar Clave Secreta', 'woowapp-smsenlinea-pro'),
+                'desc' => '<span id="regenerate_key_status" style="margin-left: 10px;"></span>' . wp_nonce_field('wse_regenerate_cron_key_action', 'wse_regenerate_cron_key_nonce', true, false) // Nonce para seguridad
+            ],
+            // === FIN: Cron Externo ===
             
             ['type' => 'sectionend', 'id' => 'wse_pro_api_settings_end'],
             
@@ -1009,6 +1056,63 @@ class WSE_Pro_Settings {
         wp_localize_script('wse-pro-admin-js', 'wse_pro_admin_params', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('wse_pro_send_test_nonce')
+        ]);
+    }
+		/**
+     * Obtiene (o genera si no existe) la clave secreta para el cron externo.
+     * @return string La clave secreta.
+     */
+    private static function get_cron_secret_key() {
+        $key = get_option('wse_pro_cron_secret_key');
+        if (empty($key)) {
+            $key = wp_generate_password(32, false); // Genera una clave aleatoria segura
+            update_option('wse_pro_cron_secret_key', $key);
+        }
+        return $key;
+    }
+
+    /**
+     * Genera una nueva clave secreta para el cron externo.
+     * @return string La nueva clave secreta.
+     */
+    public static function regenerate_cron_secret_key() {
+        $key = wp_generate_password(32, false);
+        update_option('wse_pro_cron_secret_key', $key);
+        return $key;
+    }
+
+    /**
+     * Construye la URL completa para el disparador del cron externo.
+     * @return string La URL.
+     */
+    private static function get_cron_trigger_url() {
+        $key = self::get_cron_secret_key();
+        $url = add_query_arg([
+            'trigger_woowapp_cron' => 'process_carts',
+            'key' => $key
+        ], home_url('/')); // Usamos home_url('/') para la URL base
+        return $url;
+    }
+	
+	/**
+     * Manejador AJAX para regenerar la clave secreta del cron.
+     */
+    public function ajax_regenerate_cron_key() {
+        // Verificar nonce y permisos
+        check_ajax_referer('wse_regenerate_cron_key_action', 'nonce');
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(['message' => esc_html__('No tienes permisos.', 'woowapp-smsenlinea-pro')]);
+        }
+
+        // Regenerar la clave
+        $new_key = self::regenerate_cron_secret_key();
+        $new_url = self::get_cron_trigger_url(); // Obtener la URL con la nueva clave
+
+        // Devolver la nueva clave y URL para actualizar la interfaz
+        wp_send_json_success([
+            'new_key' => $new_key,
+            'new_url' => $new_url,
+            'message' => esc_html__('¡Nueva clave generada!', 'woowapp-smsenlinea-pro')
         ]);
     }
 }
