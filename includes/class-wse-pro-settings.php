@@ -1008,35 +1008,27 @@ class WSE_Pro_Settings {
      * Renderiza un botón personalizado
      */
     public function render_button_field($value) {
-        $field_description = WC_Admin_Settings::get_field_description($value);
-        ?>
-        <tr valign="top">
-            <th scope="row" class="titledesc">
-                <label for="<?php echo esc_attr($value['id']); ?>"><?php echo esc_html($value['title']); ?></label>
-                <?php echo $field_description['tooltip_html']; ?>
-            </th>
-            <td class="forminp forminp-button">
-                <button 
-                    type="button" 
-                    id="<?php echo esc_attr($value['id']); ?>" 
-                    class="<?php echo esc_attr($value['class']); ?>"
-                ><?php echo esc_html($value['value']); ?></button>
-                <?php echo $field_description['description']; ?>
-            <td class="forminp forminp-button">
+    $field_description = WC_Admin_Settings::get_field_description($value);
+    ?>
+    <tr valign="top">
+        <th scope="row" class="titledesc">
+            <label for="<?php echo esc_attr($value['id']); ?>"><?php echo esc_html($value['title']); ?></label> <?php // title no se usa usualmente para botones, pero lo dejamos por si acaso ?>
+            <?php echo $field_description['tooltip_html']; ?>
+        </th>
+        <td class="forminp forminp-button"> <?php // <-- Solo este TD ?>
             <button
                 type="button"
                 id="<?php echo esc_attr($value['id']); ?>"
                 class="<?php echo esc_attr($value['class']); ?>"
             ><?php echo esc_html($value['value']); ?></button>
             <?php echo $field_description['description']; ?>
-            <?php // --- AÑADIR ESTA LÍNEA ---
+            <?php // Imprimir el nonce si existe en la definición
                   echo isset($value['nonce_html']) ? $value['nonce_html'] : '';
             ?>
-        </td>
-			</td>
-        </tr>
-        <?php
-    }
+        </td> <?php // <-- Fin del único TD ?>
+    </tr>
+    <?php
+}
 
     /**
      * Encola los scripts y estilos del admin
@@ -1195,6 +1187,7 @@ class WSE_Pro_Settings {
     ]);
 }
 }
+
 
 
 
