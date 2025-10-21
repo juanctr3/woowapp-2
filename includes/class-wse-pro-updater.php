@@ -69,66 +69,39 @@ class WSE_Pro_Auto_Updater {
     /**
      * Proporciona información detallada del plugin para la ventana modal de "Ver detalles".
      */
-    public function plugin_information($result, $action, $args) {
-        // Solo actuar si se pide información de nuestro plugin y la acción es 'plugin_information'
-        // Comparamos con el plugin_file_basename o el update_identifier (más seguro)
-         $request_slug = $args->slug ?? '';
-         // Comparar el slug solicitado con el basename o el ID de actualización
-         if ($action !== 'plugin_information' || ($request_slug !== dirname($this->plugin_file_basename) && $request_slug !== $this->update_identifier)) {
-             return $result;
-         }
+    // --- INICIO DEL CÓDIGO NUEVO Y CORRECTO ---
+public function plugin_information($result, $action, $args) {
+    $request_slug = $args->slug ?? '';
 
-
-        if (empty($this->license_key)) {
-            error_log('WooWApp Updater (Info): No license key, cannot fetch premium details.');
-            return $result;
-        }
-
-        // Llamar a la API para obtener los detalles
-        $response = $this->call_api('plugin_information');
-        error_log('WooWApp Updater Info API Response: ' . print_r($response, true));
-
-        // Si la llamada falló o no devolvió un objeto válido, devolver $result original
-        if ($response === false || !is_object($response)) {
-            error_log('WooWApp Updater (Info): Failed to get plugin details from API.');
-            return $result;
-        }
-
-        // Rellenar el objeto $result con la información de la API
-        $result = (object)[
-            'name'              => $response->name ?? dirname($this->plugin_file_basename), // Usar nombre de API o slug
-            'slug'              => $this->update_identifier, // Usar update_identifier como slug para la modal
-            'version'           => $response->new_version ?? $this->plugin_version,
-            'author'            => $response->author ?? '',
-            'author_profile'    => $response->author_profile ?? '',
-            'homepage'          => $response->homepage ?? '',
-            'requires'          => $response->requires ?? '', // Versión mínima de WP
-            'tested'            => $response->tested ?? '', // Versión de WP probada
-            'requires_php'      => $response->requires_php ?? '',
-            'download_link'     => $response->package ?? '', // Usar package como download_link
-            'trunk'             => $response->package ?? '',
-            'last_updated'      => $response->last_updated ?? '',
-            'sections'          => (array) ($response->sections ?? []), // Changelog, description, etc.
-            'banners'           => (array) ($response->banners ?? []),
-            'icons'             => (array) ($response->icons ?? []),
-            'banners_rtl'       => [], // Añadir si tu API lo soporta
-            'tags'              => (array) ($response->tags ?? []),
-            'donate_link'       => $response->donate_link ?? '',
-        ];
-
-         // Asegurar que las secciones existan como array aunque estén vacías
-        if (empty($result->sections)) {
-            $result->sections = ['description' => '', 'changelog' => ''];
-        } else {
-             // Convertir objeto de secciones a array si es necesario
-             $result->sections = (array) $result->sections;
-        }
-
-
-        error_log('WooWApp Updater (Info): Successfully prepared plugin details for modal.');
-
-        return $result;
+    // Solo actuar si WordPress está pidiendo información para nuestro plugin
+    if ($action !== 'plugin_information' || ($request_slug !== $this->update_identifier)) {
+        return $result; // Si no es nuestro plugin, no hacemos nada
     }
+
+    if (empty($this->license_key)) {
+        return $result; // No hay licencia, no hay detalles
+    }
+
+    // Llamar a nuestra API para obtener todos los detalles del plugin
+    $response = $this->call_api('plugin_information');
+    error_log('WooWApp Updater Info API Response: ' . print_r($response, true));
+
+    // Si la API respondió con un objeto válido, lo devolvemos directamente.
+    // WordPress se encargará de mostrar toda la información.
+    if ($response !== false && is_object($response)) {
+
+        // WordPress espera que la sección 'sections' sea un array. Nos aseguramos de que lo sea.
+        if (isset($response->sections)) {
+            $response->sections = (array) $response->sections;
+        }
+
+        return $response; // ¡Esta es la corrección clave!
+    }
+
+    // Si algo falló en la llamada a la API, devolvemos el resultado original.
+    return $result;
+}
+// --- FIN DEL CÓDIGO NUEVO Y CORRECTO ---
 
     /**
      * Llama a la API de actualizaciones.
