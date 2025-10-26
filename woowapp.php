@@ -80,7 +80,7 @@ final class WooWApp {
     private static $instance;
     private static $abandoned_cart_table_name;
     private static $tracking_table_name;
-
+    private static $review_tracker_table_name;
     public static function get_instance() {
         if (null === self::$instance) {
             self::$instance = new self();
@@ -92,7 +92,7 @@ final class WooWApp {
         global $wpdb;
         self::$abandoned_cart_table_name = $wpdb->prefix . 'wse_pro_abandoned_carts';
         self::$tracking_table_name = $wpdb->prefix . 'wse_pro_tracking';
-        
+        self::$review_tracker_table_name = $wpdb->prefix . 'wse_pro_review_tracker';
         // Cargar compatibilidad de servidor
         add_action('plugins_loaded', [$this, 'load_server_compatibility'], 1);
         
@@ -169,7 +169,28 @@ final class WooWApp {
             KEY updated_at (updated_at),
             KEY created_at (created_at)
         ) $charset_collate;";
+// TABLA DE RASTREO DE RESEÑAS (NUEVO CHATBOT)
+        $review_tracker_table_name = self::$review_tracker_table_name;
+        $sql_review_tracker = "CREATE TABLE IF NOT EXISTS $review_tracker_table_name (
+            id BIGINT(20) NOT NULL AUTO_INCREMENT,
+            order_id BIGINT(20) UNSIGNED NOT NULL,
+            customer_phone VARCHAR(40) NOT NULL,
+            customer_email VARCHAR(255) DEFAULT NULL,
+            product_id BIGINT(20) UNSIGNED NOT NULL,
+            chat_status VARCHAR(30) NOT NULL DEFAULT 'waiting_rating',
+            rating TINYINT(1) DEFAULT 0,
+            comment_text TEXT DEFAULT NULL,
+            last_msg_id VARCHAR(50) DEFAULT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY order_id (order_id),
+            KEY customer_phone (customer_phone),
+            KEY chat_status (chat_status)
+        ) $charset_collate;";
 
+        // Asegúrese de que la siguiente línea se añada a las llamadas dbDelta:
+        dbDelta($sql_review_tracker); // <--- AÑADIR ESTA LÍNEA A LA LLAMADA dbDelta
         // TABLA DE CUPONES
         $sql_coupons = "CREATE TABLE IF NOT EXISTS $coupons_table (
             id BIGINT(20) NOT NULL AUTO_INCREMENT,
@@ -208,12 +229,14 @@ final class WooWApp {
             KEY cart_id (cart_id),
             KEY event_type (event_type),
             KEY created_at (created_at)
+            
         ) $charset_collate;";
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql_carts);
         dbDelta($sql_coupons);
         dbDelta($sql_tracking);
+        dbDelta($sql_review_tracker)
     }
 
     public function maybe_upgrade_database() {
@@ -499,7 +522,7 @@ final class WooWApp {
         
         add_action('woocommerce_order_status_completed', [$this, 'schedule_review_reminder'], 10, 1);
         add_action('wse_pro_send_review_reminder_event', [$this, 'send_review_reminder_notification'], 10, 1);
-        
+        add_action('wse_pro_poll_review_replies', [$this, 'poll_review_replies_cron']); // NUEVO HOOK CRON PARA EL CHATBOT
         // Carrito abandonado
         if ('yes' === get_option('wse_pro_enable_abandoned_cart', 'no')) {
             add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_scripts']);
@@ -1361,22 +1384,91 @@ final class WooWApp {
         wp_schedule_single_event($time_to_send, 'wse_pro_send_review_reminder_event', [$order_id]);
     }
 
+    // En woowapp.php, reemplazando el contenido de send_review_reminder_notification
+
     public function send_review_reminder_notification($order_id) {
+        global $wpdb;
         $order = wc_get_order($order_id);
         
         if (!$order) {
             return;
         }
         
-        $template = get_option('wse_pro_review_reminder_message');
+        // 1. Obtener el modo de captura
+        $capture_mode = get_option('wse_pro_review_capture_mode', 'link');
         
-        if (empty($template)) {
-            return;
-        }
+        // El modo Chat solo funciona si la API seleccionada es Panel 1 (WhatsApp Classic)
+        $is_chat_mode = 'chat' === $capture_mode && get_option('wse_pro_api_panel_selection', 'panel2') === 'panel1';
         
         $api_handler = new WSE_Pro_API_Handler();
-        $message = WSE_Pro_Placeholders::replace($template, $order);
-        $api_handler->send_message($order->get_billing_phone(), $message, $order, 'customer');
+
+        if (!$is_chat_mode) {
+            // --- MODO ORIGINAL (ENLACE) ---
+            $template = get_option('wse_pro_review_reminder_message');
+            if (empty($template)) {
+                return;
+            }
+            
+            $message = WSE_Pro_Placeholders::replace($template, $order);
+            $api_handler->send_message($order->get_billing_phone(), $message, $order, 'customer');
+            
+        } elseif ($is_chat_mode) {
+            // --- NUEVO MODO CHATBOT ---
+            
+            // Si ya existe un rastreador activo, no hacer nada (para evitar duplicados)
+            $tracker_exists = $wpdb->get_var($wpdb->prepare(
+                 "SELECT id FROM " . self::$review_tracker_table_name . " WHERE order_id = %d AND chat_status != 'completed' AND chat_status != 'error'",
+                 $order_id
+            ));
+            
+            if ($tracker_exists) {
+                $this->log_info(sprintf(__('Chatbot para reseña para pedido #%d ya está activo. No se enviará de nuevo.', 'woowapp-smsenlinea-pro'), $order_id));
+                return;
+            }
+            
+            // Cargar plantilla de la pregunta de calificación
+            $template = get_option('wse_pro_review_chat_rating_question');
+            if (empty($template)) {
+                $this->log_error(sprintf(__('Chatbot no enviado para pedido #%d. Razón: Plantilla de Calificación Vacía.', 'woowapp-smsenlinea-pro'), $order_id));
+                return;
+            }
+            
+            $message = WSE_Pro_Placeholders::replace($template, $order);
+            
+            // 1. Enviar primera pregunta (Calificación)
+            $result = $api_handler->send_message($order->get_billing_phone(), $message, $order, 'customer');
+            
+            if ($result['success']) {
+                // Obtener el primer producto para rastreo (simplificación: se rastrea solo un producto)
+                $first_item = $order->get_items() ? reset($order->get_items()) : null;
+                $product_id = $first_item ? ($first_item->get_product()->is_type('variation') ? $first_item->get_product()->get_parent_id() : $first_item->get_product_id()) : 0;
+                
+                // 2. Guardar estado inicial en la nueva tabla
+                $wpdb->insert(
+                    self::$review_tracker_table_name,
+                    [
+                        'order_id'       => $order_id,
+                        'customer_phone' => $order->get_billing_phone(),
+                        'customer_email' => $order->get_billing_email(),
+                        'product_id'     => $product_id,
+                        'chat_status'    => 'waiting_rating',
+                        'last_msg_id'    => $result['message_id'] ?? 'N/A',
+                        'created_at'     => current_time('mysql'),
+                        'updated_at'     => current_time('mysql'),
+                    ],
+                    ['%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s']
+                );
+                
+                // 3. Programar tarea de escucha
+                if (!wp_next_scheduled('wse_pro_poll_review_replies')) {
+                     wp_schedule_event(time(), 'five_minutes', 'wse_pro_poll_review_replies');
+                }
+                
+                $this->log_info(sprintf(__('Chatbot para reseña iniciado para pedido #%d. Esperando calificación.', 'woowapp-smsenlinea-pro'), $order_id));
+            } else {
+                $this->log_error(sprintf(__('FALLO al iniciar chatbot para pedido #%d. Razón: %s', 'woowapp-smsenlinea-pro'), $order_id, $result['message']));
+            }
+        }
     }
 
     public function render_review_form_shortcode($atts) {
@@ -1669,6 +1761,167 @@ final class WooWApp {
      * UTILIDADES Y LOGGING
      * ========================================
      */
+    /**
+     * Tarea programada que revisa la API de Panel 1 en busca de respuestas de reseña.
+     * Esta función se ejecuta mediante un cron job programado (polling).
+     */
+    public function poll_review_replies_cron() {
+        global $wpdb;
+        $tracker_table = self::$review_tracker_table_name;
+        $api_handler = new WSE_Pro_API_Handler();
+        
+        $this->log_info(__('=== INICIANDO CRON DE ESCUCHA DE RESEÑAS (CHATBOT) ===', 'woowapp-smsenlinea-pro'));
+
+        $secret = get_option('wse_pro_api_secret_panel1');
+        if (empty($secret)) {
+            $this->log_error(__('CRON ABORTADO: API Secret (Panel 1) no configurado.', 'woowapp-smsenlinea-pro'));
+            return;
+        }
+
+        // 1. Obtener los mensajes recibidos
+        $received_messages = $api_handler->get_received_chats_from_panel1($secret);
+        
+        if (!$received_messages) {
+            $this->log_info(__('No se encontraron mensajes recibidos del Panel 1 para procesar.', 'woowapp-smsenlinea-pro'));
+            return;
+        }
+        
+        // 2. Obtener todas las conversaciones activas (waiting_rating y waiting_comment)
+        $active_chats = $wpdb->get_results("SELECT * FROM $tracker_table WHERE chat_status IN ('waiting_rating', 'waiting_comment')");
+        $processed_messages = 0;
+
+        foreach ($active_chats as $chat) {
+            $order = wc_get_order($chat->order_id);
+            if (!$order) {
+                $this->log_warning(sprintf(__('Pedido #%d no encontrado. Marcando tracker como completado/error.', 'woowapp-smsenlinea-pro'), $chat->order_id));
+                $wpdb->update($tracker_table, ['chat_status' => 'error'], ['id' => $chat->id]);
+                continue;
+            }
+
+            // Un solo producto es la expectativa para este flujo (simplificación)
+            $first_product = $order->get_items() ? reset($order->get_items()) : null;
+            $product_id_for_review = $first_product ? ($first_product->get_product()->is_type('variation') ? $first_product->get_product()->get_parent_id() : $first_product->get_product_id()) : 0;
+            
+            if ($product_id_for_review === 0) {
+                 $this->log_warning(sprintf(__('Pedido #%d sin productos válidos. Marcando tracker como error.', 'woowapp-smsenlinea-pro'), $chat->order_id));
+                 $wpdb->update($tracker_table, ['chat_status' => 'error'], ['id' => $chat->id]);
+                 continue;
+            }
+
+            // Normalizar el teléfono de rastreo (Panel 1 usa el formato con código de país)
+            // Se usa el formato de handle_response() para evitar duplicación, pero aquí simularemos.
+            // Para Panel 1, se asume que el `recipient` ya está en formato internacional y limpio.
+            $api_handler_instance = new WSE_Pro_API_Handler();
+            $customer_phone_full = $api_handler_instance->format_phone($chat->customer_phone, $order->get_billing_country());
+            
+            // Buscar una respuesta reciente del cliente
+            foreach ($received_messages as $message_data) {
+                // Normalizamos el número del cliente de la API (quitando el '+')
+                $api_customer_phone = str_replace('+', '', $message_data['recipient']);
+                
+                // Si el número de la conversación y el número del mensaje recibido coinciden
+                // Y si el mensaje es más reciente que la hora de la última interacción del chatbot.
+                if ($api_customer_phone === $customer_phone_full && $message_data['created'] > strtotime($chat->updated_at)) {
+                    $response_text = trim(sanitize_text_field($message_data['message']));
+                    $processed_messages++;
+
+                    if ('waiting_rating' === $chat->chat_status) {
+                        // --- FASE 1: Recibiendo Calificación (1 a 5) ---
+                        $rating = (int) $response_text;
+
+                        if ($rating >= 1 && $rating <= 5) {
+                            $this->log_info(sprintf(__('Calificación %d recibida para pedido #%d. Enviando Pregunta de Comentario.', 'woowapp-smsenlinea-pro'), $rating, $chat->order_id));
+                            
+                            // Preparar y enviar la segunda pregunta (Comentario)
+                            $template_comment = get_option('wse_pro_review_chat_comment_question');
+                            // Reemplazamos {review_rating} en el mensaje.
+                            $extras = ['{review_rating}' => $rating];
+                            $message_comment = WSE_Pro_Placeholders::replace($template_comment, $order, $extras);
+                            $send_result = $api_handler->send_message($customer_phone_full, $message_comment, $order, 'customer');
+
+                            if ($send_result['success']) {
+                                // Actualizar el estado del rastreador
+                                $wpdb->update(
+                                    $tracker_table,
+                                    [
+                                        'rating'      => $rating,
+                                        'chat_status' => 'waiting_comment',
+                                        'updated_at'  => current_time('mysql'),
+                                        'last_msg_id' => $send_result['message_id'] ?? 'N/A',
+                                        'product_id'  => $product_id_for_review, // Guardar producto ID
+                                    ],
+                                    ['id' => $chat->id]
+                                );
+                            }
+                        } else {
+                            $this->log_warning(sprintf(__('Respuesta de Calificación inválida ("%s") para pedido #%d. Se asume que no hay respuesta aún o se ignora.', 'woowapp-smsenlinea-pro'), $response_text, $chat->order_id));
+                        }
+                        // Solo procesar la primera respuesta.
+                        break; 
+
+                    } elseif ('waiting_comment' === $chat->chat_status) {
+                        // --- FASE 2: Recibiendo Comentario ---
+                        $this->log_info(sprintf(__('Comentario recibido para pedido #%d. Creando reseña.', 'woowapp-smsenlinea-pro'), $chat->order_id));
+                        
+                        // Crear Reseña en WooCommerce
+                        $this->create_review_from_chatbot($order, $chat->product_id, $chat->rating, $response_text);
+
+                        // Marcar como completado
+                        $wpdb->update(
+                            $tracker_table,
+                            [
+                                'comment_text' => $response_text,
+                                'chat_status'  => 'completed',
+                                'updated_at'   => current_time('mysql'),
+                            ],
+                            ['id' => $chat->id]
+                        );
+                        
+                        break;
+                    }
+                }
+            }
+        }
+        
+        $this->log_info(sprintf(__('=== CRON DE ESCUCHA FINALIZADO. %d mensajes procesados. ===', 'woowapp-smsenlinea-pro'), $processed_messages));
+    }
+    
+    // Función auxiliar para crear la reseña (DEBE IR EN LA CLASE WooWApp)
+    private function create_review_from_chatbot($order, $product_id, $rating, $comment_text) {
+        if (empty($comment_text)) {
+            $comment_text = sprintf(__('Reseña generada por chatbot: Calificación %d estrellas.', 'woowapp-smsenlinea-pro'), $rating);
+        }
+
+        $commentdata = [
+            'comment_post_ID'      => $product_id,
+            'comment_author'       => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+            'comment_author_email' => $order->get_billing_email(),
+            'comment_author_url'   => '',
+            'comment_content'      => $comment_text,
+            'comment_agent'        => 'WooWApp-Chatbot',
+            'comment_date'         => current_time('mysql'),
+            'user_id'              => $order->get_user_id() ?: 0,
+            'comment_approved'     => 0, // Pendiente de moderación
+            'comment_type'         => 'review',
+            'comment_meta'         => [
+                'rating'   => $rating,
+                // Usamos la misma lógica de verificación que la función original.
+                'verified' => wc_customer_bought_product($order->get_billing_email(), $order->get_user_id(), $product_id) ? 1 : 0,
+                'order_id' => $order->get_id(),
+                'source'   => 'chatbot'
+            ],
+        ];
+
+        $comment_id = wp_insert_comment($commentdata);
+        
+        if ($comment_id && !is_wp_error($comment_id)) {
+            $this->log_info(sprintf(__('Reseña #%d creada exitosamente por el chatbot para pedido #%d. Pendiente de aprobación.', 'woowapp-smsenlinea-pro'), $comment_id, $order->get_id()));
+            $order->add_order_note(sprintf(__('Reseña recibida vía Chatbot (Rating: %d/5). ID Reseña: %d', 'woowapp-smsenlinea-pro'), $rating, $comment_id));
+        } else {
+            $error_msg = is_wp_error($comment_id) ? $comment_id->get_error_message() : __('Error desconocido.', 'woowapp-smsenlinea-pro');
+            $this->log_error(sprintf(__('FALLO al crear reseña vía Chatbot para pedido #%d. Razón: %s', 'woowapp-smsenlinea-pro'), $order->get_id(), $error_msg));
+        }
+    }
     
     public function add_diagnostic_menu() {
         add_submenu_page(
@@ -2429,6 +2682,7 @@ function wse_pro_show_license_inactive_notice() {
     <?php
 }
 */
+
 
 
 
