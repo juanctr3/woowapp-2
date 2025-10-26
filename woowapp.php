@@ -80,7 +80,8 @@ final class WooWApp {
     private static $instance;
     private static $abandoned_cart_table_name;
     private static $tracking_table_name;
-    private static $review_tracker_table_name;
+    private static $review_tracker_table_name; // <--- MODIFICACIÓN 1.1
+
     public static function get_instance() {
         if (null === self::$instance) {
             self::$instance = new self();
@@ -92,7 +93,8 @@ final class WooWApp {
         global $wpdb;
         self::$abandoned_cart_table_name = $wpdb->prefix . 'wse_pro_abandoned_carts';
         self::$tracking_table_name = $wpdb->prefix . 'wse_pro_tracking';
-        self::$review_tracker_table_name = $wpdb->prefix . 'wse_pro_review_tracker';
+        self::$review_tracker_table_name = $wpdb->prefix . 'wse_pro_review_tracker'; // <--- MODIFICACIÓN 1.2
+        
         // Cargar compatibilidad de servidor
         add_action('plugins_loaded', [$this, 'load_server_compatibility'], 1);
         
@@ -169,28 +171,7 @@ final class WooWApp {
             KEY updated_at (updated_at),
             KEY created_at (created_at)
         ) $charset_collate;";
-// TABLA DE RASTREO DE RESEÑAS (NUEVO CHATBOT)
-        $review_tracker_table_name = self::$review_tracker_table_name;
-        $sql_review_tracker = "CREATE TABLE IF NOT EXISTS $review_tracker_table_name (
-            id BIGINT(20) NOT NULL AUTO_INCREMENT,
-            order_id BIGINT(20) UNSIGNED NOT NULL,
-            customer_phone VARCHAR(40) NOT NULL,
-            customer_email VARCHAR(255) DEFAULT NULL,
-            product_id BIGINT(20) UNSIGNED NOT NULL,
-            chat_status VARCHAR(30) NOT NULL DEFAULT 'waiting_rating',
-            rating TINYINT(1) DEFAULT 0,
-            comment_text TEXT DEFAULT NULL,
-            last_msg_id VARCHAR(50) DEFAULT NULL,
-            created_at DATETIME NOT NULL,
-            updated_at DATETIME NOT NULL,
-            PRIMARY KEY (id),
-            UNIQUE KEY order_id (order_id),
-            KEY customer_phone (customer_phone),
-            KEY chat_status (chat_status)
-        ) $charset_collate;";
 
-        // Asegúrese de que la siguiente línea se añada a las llamadas dbDelta:
-        dbDelta($sql_review_tracker); // <--- AÑADIR ESTA LÍNEA A LA LLAMADA dbDelta
         // TABLA DE CUPONES
         $sql_coupons = "CREATE TABLE IF NOT EXISTS $coupons_table (
             id BIGINT(20) NOT NULL AUTO_INCREMENT,
@@ -229,14 +210,33 @@ final class WooWApp {
             KEY cart_id (cart_id),
             KEY event_type (event_type),
             KEY created_at (created_at)
-            
         ) $charset_collate;";
+        
+        // TABLA DE RASTREO DE RESEÑAS (NUEVO CHATBOT)
+        $review_tracker_table_name = self::$review_tracker_table_name;
+        $sql_review_tracker = "CREATE TABLE IF NOT EXISTS $review_tracker_table_name (
+            id BIGINT(20) NOT NULL AUTO_INCREMENT,
+            order_id BIGINT(20) UNSIGNED NOT NULL,
+            customer_phone VARCHAR(40) NOT NULL,
+            customer_email VARCHAR(255) DEFAULT NULL,
+            product_id BIGINT(20) UNSIGNED NOT NULL,
+            chat_status VARCHAR(30) NOT NULL DEFAULT 'waiting_rating',
+            rating TINYINT(1) DEFAULT 0,
+            comment_text TEXT DEFAULT NULL,
+            last_msg_id VARCHAR(50) DEFAULT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY order_id (order_id),
+            KEY customer_phone (customer_phone),
+            KEY chat_status (chat_status)
+        ) $charset_collate;"; // <--- MODIFICACIÓN 1.3 - Bloque SQL
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql_carts);
         dbDelta($sql_coupons);
         dbDelta($sql_tracking);
-        dbDelta($sql_review_tracker)
+        dbDelta($sql_review_tracker); // <--- MODIFICACIÓN 1.3 - Llamada dbDelta
     }
 
     public function maybe_upgrade_database() {
@@ -522,7 +522,8 @@ final class WooWApp {
         
         add_action('woocommerce_order_status_completed', [$this, 'schedule_review_reminder'], 10, 1);
         add_action('wse_pro_send_review_reminder_event', [$this, 'send_review_reminder_notification'], 10, 1);
-        add_action('wse_pro_poll_review_replies', [$this, 'poll_review_replies_cron']); // NUEVO HOOK CRON PARA EL CHATBOT
+        add_action('wse_pro_poll_review_replies', [$this, 'poll_review_replies_cron']); // <--- MODIFICACIÓN 1.6
+        
         // Carrito abandonado
         if ('yes' === get_option('wse_pro_enable_abandoned_cart', 'no')) {
             add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_scripts']);
@@ -1384,8 +1385,6 @@ final class WooWApp {
         wp_schedule_single_event($time_to_send, 'wse_pro_send_review_reminder_event', [$order_id]);
     }
 
-    // En woowapp.php, reemplazando el contenido de send_review_reminder_notification
-
     public function send_review_reminder_notification($order_id) {
         global $wpdb;
         $order = wc_get_order($order_id);
@@ -1755,12 +1754,7 @@ final class WooWApp {
         // Llamar a la función de envío real
         $this->send_abandoned_cart_message($cart_row, $message_number);
     }
-
-    /**
-     * ========================================
-     * UTILIDADES Y LOGGING
-     * ========================================
-     */
+    
     /**
      * Tarea programada que revisa la API de Panel 1 en busca de respuestas de reseña.
      * Esta función se ejecuta mediante un cron job programado (polling).
@@ -1799,8 +1793,8 @@ final class WooWApp {
             }
 
             // Un solo producto es la expectativa para este flujo (simplificación)
-            $first_product = $order->get_items() ? reset($order->get_items()) : null;
-            $product_id_for_review = $first_product ? ($first_product->get_product()->is_type('variation') ? $first_product->get_product()->get_parent_id() : $first_product->get_product_id()) : 0;
+            $first_item = $order->get_items() ? reset($order->get_items()) : null;
+            $product_id_for_review = $first_item ? ($first_item->get_product()->is_type('variation') ? $first_item->get_product()->get_parent_id() : $first_item->get_product_id()) : 0;
             
             if ($product_id_for_review === 0) {
                  $this->log_warning(sprintf(__('Pedido #%d sin productos válidos. Marcando tracker como error.', 'woowapp-smsenlinea-pro'), $chat->order_id));
@@ -1922,6 +1916,12 @@ final class WooWApp {
             $this->log_error(sprintf(__('FALLO al crear reseña vía Chatbot para pedido #%d. Razón: %s', 'woowapp-smsenlinea-pro'), $order->get_id(), $error_msg));
         }
     }
+
+    /**
+     * ========================================
+     * UTILIDADES Y LOGGING
+     * ========================================
+     */
     
     public function add_diagnostic_menu() {
         add_submenu_page(
@@ -1947,7 +1947,6 @@ final class WooWApp {
             </div>
             <?php endif; ?>
             
-            <!-- Información del Plugin -->
             <div class="card" style="margin-top:20px;">
                 <h2><?php esc_html_e('Información del Plugin', 'woowapp-smsenlinea-pro'); ?></h2>
                 <table class="widefat">
@@ -1964,7 +1963,6 @@ final class WooWApp {
                 </table>
             </div>
             
-            <!-- Estructura de Base de Datos -->
             <div class="card" style="margin-top:20px;">
                 <h2><?php esc_html_e('Estructura de Base de Datos', 'woowapp-smsenlinea-pro'); ?></h2>
                 <?php
@@ -2019,9 +2017,15 @@ final class WooWApp {
                             <td><?php echo $tracking_exists ? esc_html__('Existe', 'woowapp-smsenlinea-pro') : esc_html__('No existe', 'woowapp-smsenlinea-pro'); ?></td>
                             <td><?php echo $tracking_exists ? '✓' : '✗'; ?></td>
                         </tr>
+                        <tr>
+                            <th><?php esc_html_e('Tabla Chatbot', 'woowapp-smsenlinea-pro'); ?></th>
+                            <?php $chatbot_exists = $wpdb->get_var("SHOW TABLES LIKE '" . self::$review_tracker_table_name . "'") === self::$review_tracker_table_name; ?>
+                            <td><?php echo $chatbot_exists ? esc_html__('Existe', 'woowapp-smsenlinea-pro') : esc_html__('No existe', 'woowapp-smsenlinea-pro'); ?></td>
+                            <td><?php echo $chatbot_exists ? '✓' : '✗'; ?></td>
+                        </tr>
                     </table>
                     
-                    <?php if (!empty($missing) || !empty($obsolete) || !$tracking_exists): ?>
+                    <?php if (!empty($missing) || !empty($obsolete) || !$tracking_exists || !$chatbot_exists): ?>
                     <div style="margin-top:20px;">
                         <form method="post" action="">
                             <?php wp_nonce_field('woowapp_repair', 'woowapp_repair_nonce'); ?>
@@ -2045,7 +2049,6 @@ final class WooWApp {
                 <?php } ?>
             </div>
             
-            <!-- Estadísticas -->
             <div class="card" style="margin-top:20px;">
                 <h2><?php esc_html_e('Estadísticas Generales', 'woowapp-smsenlinea-pro'); ?></h2>
                 <?php
@@ -2664,26 +2667,3 @@ function wse_pro_show_license_notice_in_settings() {
 }
 // Enganchar antes de que se muestren los campos de ajustes de WooWApp
 add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
-
-// Ejemplo de cómo proteger una funcionalidad (puedes añadir esto donde cargues funciones específicas):
-/*
-if ( wse_pro_is_license_active() ) {
-    // Cargar aquí las funcionalidades que requieren licencia activa
-    // require_once WSE_PRO_PATH . 'includes/premium-feature.php';
-} else {
-    // Opcional: Mostrar un aviso si la licencia no está activa
-    // add_action('admin_notices', 'wse_pro_show_license_inactive_notice');
-}
-function wse_pro_show_license_inactive_notice() {
-    ?>
-    <div class="notice notice-warning">
-        <p><?php printf( __('La licencia de WooWApp Pro no está activa. <a href="%s">Actívala aquí</a> para recibir actualizaciones.', 'woowapp-smsenlinea-pro'), esc_url(admin_url('options-general.php?page=wse-pro-license')) ); ?></p>
-    </div>
-    <?php
-}
-*/
-
-
-
-
-
