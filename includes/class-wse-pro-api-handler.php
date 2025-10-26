@@ -363,7 +363,7 @@ class WSE_Pro_API_Handler {
      * @param string $country_iso Código ISO del país del cliente (ej. 'PE', 'CO').
      * @return string             Número de teléfono formateado.
      */
-    private function format_phone($phone, $country_iso) {
+    public function format_phone($phone, $country_iso) {
         // Limpiar cualquier caracter no numérico del teléfono
         $phone = preg_replace('/[^\d]/', '', $phone);
         if (empty($phone)) {
@@ -564,6 +564,7 @@ class WSE_Pro_API_Handler {
     }
 
 }
+
 
 
 
