@@ -1950,11 +1950,7 @@ final class WooWApp {
         $this->log_info(sprintf(__('=== CRON DE ESCUCHA FINALIZADO. %d mensajes procesados. Próxima ejecución programada a: %s. ===', 'woowapp-smsenlinea-pro'), $processed_messages, $next_schedule));
     }
         
-        // Finalizar y programar la próxima ejecución (Punto 3: Smart Polling)
-        $this->schedule_next_review_poll($next_schedule);
-        $this->log_info(sprintf(__('=== CRON DE ESCUCHA FINALIZADO. %d mensajes procesados. Próxima ejecución programada a: %s. ===', 'woowapp-smsenlinea-pro'), $processed_messages, $next_schedule));
-    }
-    
+            
     // Función auxiliar para crear la reseña (DEBE IR EN LA CLASE WooWApp)
     private function create_review_from_chatbot($order, $product_id, $rating, $comment_text) {
         if (empty($comment_text)) {
@@ -2742,6 +2738,7 @@ function wse_pro_show_license_notice_in_settings() {
 }
 // Enganchar antes de que se muestren los campos de ajustes de WooWApp
 add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
+
 
 
 
