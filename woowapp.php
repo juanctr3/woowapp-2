@@ -1895,8 +1895,14 @@ final class WooWApp {
                         $processed_messages++;
                             
                             // FASE 1: Recibiendo Calificación (1 a 5)
+                            // FASE 1: Recibiendo Calificación (1 a 5)
                             if ('waiting_rating' === $chat->chat_status) {
-                                $rating = (int) preg_replace('/[^\d]/', '', $response_text); // Limpiamos la respuesta para obtener solo el número
+                                
+                                // Intentamos extraer la calificación. Buscamos UN número del 1 al 5 en el texto.
+                                $rating_match = preg_match('/\b[1-5]\b/', $response_text, $matches);
+                                $rating = $rating_match ? (int) $matches[0] : 0;
+
+                                $this->log(sprintf(__('DEBUG CHAT: Recibida respuesta "%s" para pedido #%d. Intento de Rating: %d', 'woowapp-smsenlinea-pro'), $response_text, $chat->order_id, $rating));
 
                                 if ($rating >= 1 && $rating <= 5) {
                                     $this->log_info(sprintf(__('Calificación %d recibida para pedido #%d. Enviando Pregunta de Comentario.', 'woowapp-smsenlinea-pro'), $rating, $chat->order_id));
@@ -1917,8 +1923,7 @@ final class WooWApp {
                                         ], ['id' => $chat->id]);
                                     }
                                 } else {
-                                    $this->log_warning(sprintf(__('Respuesta de Calificación inválida ("%s") para pedido #%d. Se actualiza tiempo de espera para re-intento rápido.', 'woowapp-smsenlinea-pro'), $response_text, $chat->order_id));
-                                    $wpdb->update($tracker_table, ['updated_at' => current_time('mysql')], ['id' => $chat->id]);
+                                    $this->log_warning(sprintf(__('Respuesta de Calificación inválida ("%s" - no 1-5). Se asume que no hay respuesta aún o se ignora.', 'woowapp-smsenlinea-pro'), $response_text));
                                 }
                                 break; // Dejar de buscar mensajes para este chat
 
@@ -2736,6 +2741,7 @@ function wse_pro_show_license_notice_in_settings() {
 }
 // Enganchar antes de que se muestren los campos de ajustes de WooWApp
 add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
+
 
 
 
