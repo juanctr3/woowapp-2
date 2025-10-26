@@ -323,7 +323,7 @@ class WSE_Pro_API_Handler {
      */
     public function get_received_chats_from_panel1($secret) {
         if (empty($secret)) {
-            $this->log_error(__('No se pudo obtener mensajes recibidos: API Secret del Panel 1 vacío.', 'woowapp-smsenlinea-pro'));
+            $this->log(__('No se pudo obtener mensajes recibidos: API Secret del Panel 1 vacío.', 'woowapp-smsenlinea-pro'));
             return false;
         }
 
@@ -339,19 +339,19 @@ class WSE_Pro_API_Handler {
         $response = wp_remote_get($url, ['timeout' => 30]);
 
         if (is_wp_error($response)) {
-            $this->log_error(sprintf(__('Fallo API al obtener chats recibidos: %s', 'woowapp-smsenlinea-pro'), $response->get_error_message()));
+            $this->log(sprintf(__('Fallo API al obtener chats recibidos: %s', 'woowapp-smsenlinea-pro'), $response->get_error_message()));
             return false;
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
         
         if (isset($body['status']) && $body['status'] === 200 && isset($body['data']) && is_array($body['data'])) {
-            $this->log_info(sprintf(__('Obtenidos %d mensajes recibidos del Panel 1.', 'woowapp-smsenlinea-pro'), count($body['data'])));
+            $this->log(sprintf(__('Obtenidos %d mensajes recibidos del Panel 1.', 'woowapp-smsenlinea-pro'), count($body['data'])));
             return $body['data'];
         }
         
         $error = $body['message'] ?? __('Error desconocido al obtener chats recibidos.', 'woowapp-smsenlinea-pro');
-        $this->log_error(sprintf(__('Fallo al obtener chats recibidos. Razón: %s', 'woowapp-smsenlinea-pro'), $error));
+        $this->log(sprintf(__('Fallo al obtener chats recibidos. Razón: %s', 'woowapp-smsenlinea-pro'), $error));
         return false;
     }
     
@@ -564,6 +564,7 @@ class WSE_Pro_API_Handler {
     }
 
 }
+
 
 
 
