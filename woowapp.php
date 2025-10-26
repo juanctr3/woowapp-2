@@ -1881,13 +1881,18 @@ final class WooWApp {
                     $customer_phone_full = $api_handler->format_phone($chat->customer_phone, $order->get_billing_country()); 
                     
                     foreach ($received_messages as $message_data) {
-                        // Normalizamos el número del cliente de la API (quitando el '+')
-                        $api_customer_phone = str_replace('+', '', $message_data['recipient']);
+                        // 1. Normalizamos los números para asegurar la coincidencia (quitamos + y código de país si es necesario)
+                // Usamos el número de la BD (sin formatear) para hacer la búsqueda más flexible si la API devuelve +CODIGO.
+                $chat_phone_clean = preg_replace('/[^\d]/', '', $chat->customer_phone);
+                $api_phone_clean = preg_replace('/[^\d]/', '', $message_data['recipient']);
+
+                // 2. Comparamos si el número del chat (sin código de país) está contenido en el número de la API (que sí podría tener el código de país).
+                if (str_contains($api_phone_clean, $chat_phone_clean)) {
+                    // 3. Verificación de fecha: SOLO procesar mensajes que llegaron DESPUÉS del último mensaje enviado por el BOT (chat->updated_at)
+                    if ($message_data['created'] > strtotime($chat->updated_at)) {
                         
-                        // Buscamos coincidencia: Teléfono y Mensaje Reciente
-                        if ($api_customer_phone === $customer_phone_full && $message_data['created'] > strtotime($chat->updated_at)) {
-                            $response_text = trim(sanitize_text_field($message_data['message']));
-                            $processed_messages++;
+                        $response_text = trim(sanitize_text_field($message_data['message']));
+                        $processed_messages++;
                             
                             // FASE 1: Recibiendo Calificación (1 a 5)
                             if ('waiting_rating' === $chat->chat_status) {
@@ -2731,6 +2736,7 @@ function wse_pro_show_license_notice_in_settings() {
 }
 // Enganchar antes de que se muestren los campos de ajustes de WooWApp
 add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
+
 
 
 
