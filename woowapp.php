@@ -2162,19 +2162,19 @@ final class WooWApp {
         echo '</p></div>';
     }
 
-    private function log_info($message) {
+    private function log($message) {
         if (get_option('wse_pro_enable_log') === 'yes' && function_exists('wc_get_logger')) {
             wc_get_logger()->info($message, ['source' => 'woowapp-' . date('Y-m-d')]);
         }
     }
 
-    private function log_warning($message) {
+    private function log($message) {
         if (get_option('wse_pro_enable_log') === 'yes' && function_exists('wc_get_logger')) {
             wc_get_logger()->warning($message, ['source' => 'woowapp-' . date('Y-m-d')]);
         }
     }
 
-    private function log_error($message) {
+    private function log($message) {
         if (get_option('wse_pro_enable_log') === 'yes' && function_exists('wc_get_logger')) {
             wc_get_logger()->error($message, ['source' => 'woowapp-' . date('Y-m-d')]);
         }
@@ -2667,3 +2667,4 @@ function wse_pro_show_license_notice_in_settings() {
 }
 // Enganchar antes de que se muestren los campos de ajustes de WooWApp
 add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
+
