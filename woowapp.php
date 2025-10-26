@@ -1827,11 +1827,11 @@ final class WooWApp {
         $secret = get_option('wse_pro_api_secret_panel1');
         if (empty($secret)) {
             $this->log_error(__('CRON ABORTADO: API Secret (Panel 1) no configurado.', 'woowapp-smsenlinea-pro'));
-            $this->schedule_next_review_poll('ten_minutes'); // Programar lento
+            $this->schedule_next_review_poll('ten_minutes');
             return;
         }
 
-        // 1. Obtener todas las conversaciones activas (waiting_rating y waiting_comment), ordenadas por la más reciente actividad.
+        // 1. Obtener todas las conversaciones activas
         $active_chats = $wpdb->get_results(
             "SELECT * FROM $tracker_table 
              WHERE chat_status IN ('waiting_rating', 'waiting_comment') 
@@ -1839,26 +1839,24 @@ final class WooWApp {
         );
         
         $has_active_chats = !empty($active_chats);
-        $next_schedule = 'ten_minutes'; // Frecuencia por defecto (más lenta)
+        $next_schedule = 'ten_minutes'; 
         $processed_messages = 0;
         
-        if ($has_active_chats) { // <--- COMIENZA IF PRINCIPAL
-            // **Punto 3: Smart Polling**
+        if ($has_active_chats) { // <-- INICIO: IF PRINCIPAL
+            // PUNTO 3: Lógica de Smart Polling para la próxima ejecución
             $newest_chat = $active_chats[0];
             $time_since_last_update = current_time('timestamp') - strtotime($newest_chat->updated_at);
             
-            // Si el chat más reciente fue iniciado/actualizado hace menos de 5 minutos, escuchamos cada 1 minuto (alta frecuencia)
             if ($time_since_last_update < (5 * MINUTE_IN_SECONDS)) {
                 $next_schedule = 'one_minute';
             } else {
-                // Si el chat más reciente es antiguo (> 5 minutos), escuchamos cada 10 minutos (baja frecuencia)
                 $next_schedule = 'ten_minutes';
             }
             
-            // 2. Obtener los mensajes recibidos SOLO si hay chats activos
+            // 2. Obtener los mensajes recibidos
             $received_messages = $api_handler->get_received_chats_from_panel1($secret);
 
-            if ($received_messages) {
+            if ($received_messages) { // <-- INICIO: IF $received_messages
                 foreach ($active_chats as $chat) {
                     $order = wc_get_order($chat->order_id);
                     if (!$order) {
@@ -1867,7 +1865,6 @@ final class WooWApp {
                         continue;
                     }
 
-                    // Pre-obtener el ID de producto para el registro final
                     $first_item = $order->get_items() ? reset($order->get_items()) : null;
                     $product_id_for_review = $first_item ? ($first_item->get_product()->is_type('variation') ? $first_item->get_product()->get_parent_id() : $first_item->get_product_id()) : 0;
                     
@@ -1884,9 +1881,9 @@ final class WooWApp {
                         $chat_phone_clean = preg_replace('/[^\d]/', '', $chat->customer_phone);
                         $api_phone_clean = preg_replace('/[^\d]/', '', $message_data['recipient']);
 
-                        // 2. Comparamos si el número del chat (sin código de país) está contenido en el número de la API.
+                        // 2. Comparamos si el número del chat está contenido en el número de la API.
                         if (str_contains($api_phone_clean, $chat_phone_clean)) {
-                            // 3. Verificación de fecha: SOLO procesar mensajes que llegaron DESPUÉS del último mensaje enviado por el BOT (chat->updated_at)
+                            // 3. Verificación de fecha: SOLO procesar mensajes más recientes.
                             if ($message_data['created'] > strtotime($chat->updated_at)) {
                                 
                                 $response_text = trim(sanitize_text_field($message_data['message']));
@@ -1895,16 +1892,14 @@ final class WooWApp {
                                 // FASE 1: Recibiendo Calificación (1 a 5)
                                 if ('waiting_rating' === $chat->chat_status) {
                                     
-                                    // Intentamos extraer la calificación. Buscamos UN número del 1 al 5 en el texto.
                                     $rating_match = preg_match('/\b[1-5]\b/', $response_text, $matches);
                                     $rating = $rating_match ? (int) $matches[0] : 0;
 
-                                    $this->log(sprintf(__('DEBUG CHAT: Recibida respuesta "%s" para pedido #%d. Intento de Rating: %d', 'woowapp-smsenlinea-pro'), $response_text, $chat->order_id, $rating));
+                                    $this->log_info(sprintf(__('DEBUG CHAT: Recibida respuesta "%s" para pedido #%d. Intento de Rating: %d', 'woowapp-smsenlinea-pro'), $response_text, $chat->order_id, $rating));
 
                                     if ($rating >= 1 && $rating <= 5) {
                                         $this->log_info(sprintf(__('Calificación %d recibida para pedido #%d. Enviando Pregunta de Comentario.', 'woowapp-smsenlinea-pro'), $rating, $chat->order_id));
                                         
-                                        // Enviar segunda pregunta (Comentario)
                                         $template_comment = get_option('wse_pro_review_chat_comment_question');
                                         $extras = ['{review_rating}' => $rating];
                                         $message_comment = WSE_Pro_Placeholders::replace($template_comment, $order, $extras);
@@ -1922,7 +1917,7 @@ final class WooWApp {
                                     } else {
                                         $this->log_warning(sprintf(__('Respuesta de Calificación inválida ("%s" - no 1-5). Se asume que no hay respuesta aún o se ignora.', 'woowapp-smsenlinea-pro'), $response_text));
                                     }
-                                    break; // Dejar de buscar mensajes para este chat
+                                    break; 
 
                                 // FASE 2: Recibiendo Comentario
                                 } elseif ('waiting_comment' === $chat->chat_status) {
@@ -1936,15 +1931,19 @@ final class WooWApp {
                                         'updated_at'   => current_time('mysql'),
                                     ], ['id' => $chat->id]);
                                     
-                                    break; // Chat completado
+                                    break; 
                                 }
                             }
-                        } // Fin bucle received_messages
-                    } // Fin bucle active_chats
-                } else {
-                    $this->log_info(__('No se encontraron mensajes recibidos del Panel 1 para procesar. La frecuencia de escucha se establecerá lenta.', 'woowapp-smsenlinea-pro'));
-                }
-        } // <--- CIERRA IF PRINCIPAL ($has_active_chats)
+                        }
+                    } // Fin bucle received_messages
+                } // Fin bucle active_chats
+            } else {
+                $this->log_info(__('No se encontraron mensajes recibidos del Panel 1 para procesar.', 'woowapp-smsenlinea-pro'));
+            }
+        } else { // <-- ELSE para IF PRINCIPAL
+             $this->log_info(__('No hay conversaciones de reseña pendientes. La frecuencia de escucha se establecerá lenta.', 'woowapp-smsenlinea-pro'));
+             $next_schedule = 'ten_minutes';
+        } // <-- CIERRA IF PRINCIPAL Y SU ELSE
 
         // Finalizar y programar la próxima ejecución (Punto 3: Smart Polling)
         $this->schedule_next_review_poll($next_schedule);
@@ -2743,6 +2742,7 @@ function wse_pro_show_license_notice_in_settings() {
 }
 // Enganchar antes de que se muestren los campos de ajustes de WooWApp
 add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
+
 
 
 
