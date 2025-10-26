@@ -564,7 +564,7 @@ class WSE_Pro_Settings {
                 'default' => '7'
             ],
             [
-                'name' => __('Plantilla del mensaje', 'woowapp-smsenlinea-pro'),
+                'name' => __('Plantilla del mensaje (Enlace Web)', 'woowapp-smsenlinea-pro'),
                 'type' => 'textarea_with_pickers',
                 'id' => 'wse_pro_review_reminder_message',
                 'css' => 'width:100%; height:75px;',
@@ -572,7 +572,36 @@ class WSE_Pro_Settings {
             ],
             
             ['type' => 'sectionend', 'id' => 'wse_pro_review_reminders_end'],
-
+			// --- INICIO NUEVOS CAMPOS DE CHATBOT (AÑADIR ESTO AQUÍ) ---
+            [
+                'name' => __('Modo de Captura de Reseña', 'woowapp-smsenlinea-pro'),
+                'type' => 'select',
+                'id' => 'wse_pro_review_capture_mode',
+                'options' => [
+                    'link' => __('Enlace a formulario web (Actual)', 'woowapp-smsenlinea-pro'),
+                    'chat' => __('Chatbot por WhatsApp (Panel 1)', 'woowapp-smsenlinea-pro')
+                ],
+                'default' => 'link',
+                'desc_tip' => true,
+                'desc' => __('Elige cómo el cliente puede enviar su reseña. El modo Chatbot requiere Panel 1 y cron jobs estables.', 'woowapp-smsenlinea-pro')
+            ],
+            [
+                'name' => __('Pregunta de Calificación (Chatbot)', 'woowapp-smsenlinea-pro'),
+                'type' => 'textarea_with_pickers',
+                'id' => 'wse_pro_review_chat_rating_question',
+                'css' => 'width:100%; height:75px;',
+                'default' => __('¡Hola {customer_name}! En una escala de 1 a 5, ¿qué tal te pareció tu pedido #{order_id} de "{first_product_name}"? Responde solo con un número (1 a 5).', 'woowapp-smsenlinea-pro'),
+                'desc' => __('Primer mensaje. El cliente debe responder con un número del 1 al 5.', 'woowapp-smsenlinea-pro')
+            ],
+            [
+                'name' => __('Pregunta de Comentario (Chatbot)', 'woowapp-smsenlinea-pro'),
+                'type' => 'textarea_with_pickers',
+                'id' => 'wse_pro_review_chat_comment_question',
+                'css' => 'width:100%; height:75px;',
+                'default' => __('¡Gracias por tu {review_rating} de calificación! Ahora, déjanos un breve comentario o reseña de tu experiencia.', 'woowapp-smsenlinea-pro'),
+                'desc' => __('Segundo mensaje. El cliente debe responder con su comentario. El placeholder {review_rating} se reemplazará con la calificación dada.', 'woowapp-smsenlinea-pro')
+            ],
+            // --- FIN NUEVOS CAMPOS DE CHATBOT ---
             // Nueva opción para hacer obligatoria la calificación
             [
                 'name' => __('¿Calificación obligatoria?', 'woowapp-smsenlinea-pro'),
@@ -1201,6 +1230,7 @@ class WSE_Pro_Settings {
     ]);
 }
 }
+
 
 
 
