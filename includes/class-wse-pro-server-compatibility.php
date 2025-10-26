@@ -54,6 +54,12 @@ class WSE_Pro_Server_Compatibility {
     }
 
     public static function detect_php_fpm_socket() {
+        // Si 'open_basedir' está activo, omitimos la búsqueda de archivos fuera del directorio permitido
+        // para evitar los mensajes de "Warning" en el servidor.
+        if (ini_get('open_basedir')) {
+            return null;
+        }
+        
         // Para Nginx + PHP-FPM, encontrar el socket correcto
         $common_sockets = [
             '/var/run/php/php8.3-fpm.sock',
