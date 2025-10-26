@@ -315,7 +315,45 @@ class WSE_Pro_API_Handler {
 
         return $this->handle_response($response, $phone, $data_source, $type);
     }
-    
+    /**
+     * Llama a la API de Panel 1 para obtener mensajes recibidos del cliente.
+     *
+     * @param string $secret API Secret del Panel 1.
+     * @return array|bool Array de mensajes recibidos o false si falla.
+     */
+    public function get_received_chats_from_panel1($secret) {
+        if (empty($secret)) {
+            $this->log_error(__('No se pudo obtener mensajes recibidos: API Secret del Panel 1 vacío.', 'woowapp-smsenlinea-pro'));
+            return false;
+        }
+
+        $endpoint_url = 'https://whatsapp.smsenlinea.com/api/get/wa.received';
+        $query_args = [
+            'secret' => $secret,
+            'limit' => 50, // Límite por página para no sobrecargar
+            'page' => 1
+        ];
+        
+        $url = add_query_arg($query_args, $endpoint_url);
+
+        $response = wp_remote_get($url, ['timeout' => 30]);
+
+        if (is_wp_error($response)) {
+            $this->log_error(sprintf(__('Fallo API al obtener chats recibidos: %s', 'woowapp-smsenlinea-pro'), $response->get_error_message()));
+            return false;
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        
+        if (isset($body['status']) && $body['status'] === 200 && isset($body['data']) && is_array($body['data'])) {
+            $this->log_info(sprintf(__('Obtenidos %d mensajes recibidos del Panel 1.', 'woowapp-smsenlinea-pro'), count($body['data'])));
+            return $body['data'];
+        }
+        
+        $error = $body['message'] ?? __('Error desconocido al obtener chats recibidos.', 'woowapp-smsenlinea-pro');
+        $this->log_error(sprintf(__('Fallo al obtener chats recibidos. Razón: %s', 'woowapp-smsenlinea-pro'), $error));
+        return false;
+    }
     
     /**
      * Formatea un número de teléfono con el código de país si es necesario.
@@ -460,7 +498,10 @@ class WSE_Pro_API_Handler {
             
             $success_message = $is_panel1_queued_success ? __('Mensaje encolado para envío.', 'woowapp-smsenlinea-pro') : __('Enviado exitosamente.', 'woowapp-smsenlinea-pro');
             
-            return ['success' => true, 'message' => $success_message];
+            $success_message = $is_panel1_queued_success ? __('Mensaje encolado para envío.', 'woowapp-smsenlinea-pro') : __('Enviado exitosamente.', 'woowapp-smsenlinea-pro');
+            
+            // Retornar el message_id para rastreo
+            return ['success' => true, 'message' => $success_message, 'message_id' => $message_id]; // <--- REEMPLAZAR ESTA LÍNEA
 
         } else {
             $error = $body['solution'] ?? $body['message'] ?? __('Error desconocido', 'woowapp-smsenlinea-pro');
@@ -523,5 +564,6 @@ class WSE_Pro_API_Handler {
     }
 
 }
+
 
 
