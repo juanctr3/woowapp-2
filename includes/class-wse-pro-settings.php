@@ -452,7 +452,45 @@ class WSE_Pro_Settings {
                 'nonce_html' => wp_nonce_field('wse_regenerate_cron_key_action', 'wse_regenerate_cron_key_nonce', true, false) // Nonce movido aquí
             ],
             // === FIN: Cron Externo ===
-            
+            // --- INICIO: CONFIGURACIÓN ROMPEHIELOS (ANTI-BLOQUEO) ---
+[
+    'name' => __('🛡️ Estrategia Anti-Bloqueo (Rompehielos)', 'woowapp-smsenlinea-pro'),
+    'type' => 'title',
+    'id' => 'wse_pro_icebreaker_title',
+    'desc' => __('Evita bloqueos de WhatsApp enviando un mensaje corto primero a números nuevos. Solo si responden, se enviará el carrito completo.', 'woowapp-smsenlinea-pro')
+],
+[
+    'name' => __('Activar Rompehielos', 'woowapp-smsenlinea-pro'),
+    'type' => 'checkbox',
+    'id' => 'wse_pro_enable_icebreaker',
+    'desc' => __('<strong>Activar verificación de respuesta previa.</strong> (Recomendado)', 'woowapp-smsenlinea-pro'),
+    'default' => 'no'
+],
+[
+    'name' => __('Mensaje Rompehielos (Carrito)', 'woowapp-smsenlinea-pro'),
+    'type' => 'textarea_with_pickers',
+    'id' => 'wse_pro_icebreaker_message_cart',
+    'css' => 'width:100%; height:80px;',
+    'default' => __('Hola {customer_name}, vemos que tienes un pedido pendiente por {order_total}. Responde *SI* para enviarte el enlace de pago o *NO* para cancelar.', 'woowapp-smsenlinea-pro'),
+    'desc' => __('Mensaje corto sin enlaces para iniciar conversación.', 'woowapp-smsenlinea-pro')
+],
+[
+    'name' => __('Palabra Clave: Confirmar', 'woowapp-smsenlinea-pro'),
+    'type' => 'text',
+    'id' => 'wse_pro_icebreaker_keyword_confirm',
+    'default' => 'SI,COMPLETAR,QUIERO',
+    'desc' => __('Palabras separadas por comas que el cliente debe escribir para recibir el enlace.', 'woowapp-smsenlinea-pro'),
+    'desc_tip' => true
+],
+[
+    'name' => __('Palabra Clave: Cancelar', 'woowapp-smsenlinea-pro'),
+    'type' => 'text',
+    'id' => 'wse_pro_icebreaker_keyword_cancel',
+    'default' => 'NO,CANCELAR,BAJA',
+    'desc' => __('Palabras que cancelarán el proceso y evitarán más mensajes.', 'woowapp-smsenlinea-pro'),
+    'desc_tip' => true
+],
+// --- FIN: CONFIGURACIÓN ROMPEHIELOS ---
             ['type' => 'sectionend', 'id' => 'wse_pro_api_settings_end'],
             
             // Sección de Prueba
@@ -1304,6 +1342,7 @@ class WSE_Pro_Settings {
     ]);
 }
 }
+
 
 
 
