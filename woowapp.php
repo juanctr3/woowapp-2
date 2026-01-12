@@ -405,15 +405,7 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
     }
 
     private function ensure_cron_scheduled() {
-        // Registrar ruta para Webhook de SMSenlinea
-        add_action('rest_api_init', function () {
-            register_rest_route('woowapp/v1', '/webhook', [
-                'methods' => 'POST',
-                'callback' => [$this, 'handle_incoming_webhook'],
-                'permission_callback' => '__return_true', // Validación se hace dentro con el secret
-            ]);
-        });
-        add_filter('cron_schedules', function($schedules) {
+          add_filter('cron_schedules', function($schedules) {
             if (!isset($schedules['five_minutes'])) {
                 $schedules['five_minutes'] = [
                     'interval' => 5 * MINUTE_IN_SECONDS,
@@ -493,6 +485,14 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
         
         add_action('admin_notices', [$this, 'check_review_page_exists']);
         add_action('init', [$this, 'maybe_trigger_external_cron']);
+        // Registrar ruta para Webhook de SMSenlinea
+        add_action('rest_api_init', function () {
+            register_rest_route('woowapp/v1', '/webhook', [
+                'methods' => 'POST',
+                'callback' => [$this, 'handle_incoming_webhook'],
+                'permission_callback' => '__return_true', // Validación se hace dentro con el secret
+            ]);
+        });
         add_filter('cron_schedules', function($schedules) {
             if (!isset($schedules['one_minute'])) {
                 $schedules['one_minute'] = [
@@ -2894,6 +2894,7 @@ function wse_pro_show_license_notice_in_settings() {
 }
 // Enganchar antes de que se muestren los campos de ajustes de WooWApp
 add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
+
 
 
 
