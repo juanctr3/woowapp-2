@@ -802,6 +802,21 @@ class WSE_Pro_Settings {
     'name' => __('🛡️ Estrategia Anti-Bloqueo (Rompehielos)', 'woowapp-smsenlinea-pro'),
     'type' => 'title',
     'id' => 'wse_pro_icebreaker_title',
+	// --- INICIO: CAMPO INFORMATIVO WEBHOOK ---
+            [
+                'name' => __('🔗 URL del Webhook (Configurar en SMSenlinea)', 'woowapp-smsenlinea-pro'),
+                'type' => 'text',
+                'id'   => 'wse_pro_webhook_url_display_info',
+                'desc' => __('<strong>Importante:</strong> Copia esta URL exacta y pégala en la sección de <a href="https://whatsapp.smsenlinea.com/webhooks" target="_blank">Webhooks de tu Panel</a>. Incluye tu clave de seguridad para evitar accesos no autorizados.', 'woowapp-smsenlinea-pro'),
+                'desc_tip' => false,
+                'custom_attributes' => [
+                    'readonly' => 'readonly',
+                    'value' => get_rest_url(null, 'woowapp/v1/webhook') . '?secret=' . esc_attr(get_option('wse_pro_api_secret_panel1')),
+                    'onclick' => 'this.select();', // Auto-seleccionar al hacer clic
+                    'style' => 'width: 100%; max-width: 600px; background-color: #f0f0f1; border: 1px solid #8c8f94; color: #50575e;'
+                ]
+            ],
+            // --- FIN: CAMPO INFORMATIVO WEBHOOK ---
     'desc' => __('Evita bloqueos de WhatsApp enviando un mensaje corto primero a números nuevos. Solo si responden, se enviará el carrito completo.', 'woowapp-smsenlinea-pro')
 ],
 [
@@ -1341,3 +1356,4 @@ class WSE_Pro_Settings {
         'message' => esc_html__('¡Nueva clave generada!', 'woowapp-smsenlinea-pro')
     ]);
 } }
+
