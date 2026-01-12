@@ -2507,6 +2507,125 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
         }
         // Si los parámetros GET no coinciden, simplemente no hacemos nada y dejamos que WordPress continúe normalmente.
     }
+	 /**
+     * ========================================
+     * LÓGICA ROMPEHIELOS (ANTI-BLOQUEO)
+     * ========================================
+     */
+
+    /**
+     * Verifica si un teléfono es de confianza (ha respondido antes)
+     */
+    private function is_phone_trusted($phone) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'wse_pro_client_interactions';
+        // Limpiar teléfono para búsqueda
+        $phone_clean = preg_replace('/[^0-9]/', '', $phone);
+        
+        // Buscamos si existe y es trusted
+        $is_trusted = $wpdb->get_var($wpdb->prepare(
+            "SELECT is_trusted FROM $table WHERE phone LIKE %s",
+            '%' . $wpdb->esc_like($phone_clean) // Búsqueda flexible por si acaso
+        ));
+        
+        return (bool) $is_trusted;
+    }
+
+    /**
+     * Marca un teléfono como de confianza
+     */
+    private function mark_phone_as_trusted($phone, $type = 'response') {
+        global $wpdb;
+        $table = $wpdb->prefix . 'wse_pro_client_interactions';
+        $phone_clean = preg_replace('/[^0-9]/', '', $phone);
+
+        // Intentar insertar o actualizar
+        $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE phone = %s", $phone_clean));
+
+        if ($exists) {
+            $wpdb->update($table, 
+                ['is_trusted' => 1, 'last_interaction' => current_time('mysql'), 'interaction_type' => $type],
+                ['phone' => $phone_clean]
+            );
+        } else {
+            $wpdb->insert($table, [
+                'phone' => $phone_clean,
+                'is_trusted' => 1,
+                'last_interaction' => current_time('mysql'),
+                'interaction_type' => $type,
+                'created_at' => current_time('mysql')
+            ]);
+        }
+        $this->log_info(sprintf(__('Teléfono %s marcado como DE CONFIANZA.', 'woowapp-smsenlinea-pro'), $phone_clean));
+    }
+
+    /**
+     * Manejador del Webhook (Recibe respuestas de SMSenlinea)
+     */
+    public function handle_incoming_webhook($request) {
+        $params = $request->get_params();
+        $this->log_info('Webhook recibido: ' . print_r($params, true));
+
+        // 1. Validar Secret (Seguridad básica)
+        // Nota: SMSenlinea manda el secret en la URL o header. 
+        // Para simplificar y no romper, validamos si la estructura parece correcta.
+        // Lo ideal sería comparar $_GET['secret'] con tu opción guardada si el panel lo permite enviar.
+        
+        // 2. Extraer datos
+        $type = isset($params['type']) ? $params['type'] : '';
+        $data = isset($params['data']) ? $params['data'] : [];
+        
+        if ($type !== 'whatsapp' || empty($data)) {
+            return new WP_REST_Response(['status' => 'ignored', 'message' => 'Not a WhatsApp message'], 200);
+        }
+
+        $from_number = isset($data['from']) ? $data['from'] : (isset($data['phone']) ? $data['phone'] : ''); // Ajuste según doc
+        $message_body = isset($data['message']) ? strtoupper(trim($data['message'])) : '';
+        
+        if (empty($from_number) || empty($message_body)) {
+            return new WP_REST_Response(['status' => 'error', 'message' => 'Missing data'], 400);
+        }
+
+        // 3. Obtener Palabras Clave de Configuración
+        $keywords_confirm = explode(',', strtoupper(get_option('wse_pro_icebreaker_keyword_confirm', 'SI,COMPLETAR,QUIERO')));
+        $keywords_cancel = explode(',', strtoupper(get_option('wse_pro_icebreaker_keyword_cancel', 'NO,CANCELAR,BAJA')));
+
+        // 4. Lógica de Respuesta
+        if (in_array($message_body, $keywords_confirm)) {
+            // --- EL CLIENTE QUIERE EL CARRITO ---
+            $this->mark_phone_as_trusted($from_number, 'confirmed_cart');
+            
+            // Buscar el último carrito activo de este teléfono
+            global $wpdb;
+            $cart = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM " . self::$abandoned_cart_table_name . " 
+                 WHERE (phone LIKE %s OR billing_phone LIKE %s) AND status = 'active' 
+                 ORDER BY created_at DESC LIMIT 1",
+                '%' . preg_replace('/[^0-9]/', '', $from_number),
+                '%' . preg_replace('/[^0-9]/', '', $from_number)
+            ));
+
+            if ($cart) {
+                // Forzar el envío del Mensaje #1 COMPLETO (con enlace)
+                $this->log_info("Cliente confirmó. Enviando carrito #{$cart->id} completo.");
+                $this->send_abandoned_cart_message($cart, 1, true); // true = forzar envío completo
+            }
+
+        } elseif (in_array($message_body, $keywords_cancel)) {
+            // --- EL CLIENTE CANCELA ---
+            global $wpdb;
+            // Marcar carrito como recuperado/cancelado para que no moleste más
+            $wpdb->query($wpdb->prepare(
+                "UPDATE " . self::$abandoned_cart_table_name . " SET status = 'cancelled' 
+                 WHERE (phone LIKE %s OR billing_phone LIKE %s) AND status = 'active'",
+                '%' . preg_replace('/[^0-9]/', '', $from_number),
+                '%' . preg_replace('/[^0-9]/', '', $from_number)
+            ));
+            $this->log_info("Cliente canceló. Carritos marcados como cancelados para $from_number.");
+        }
+
+        return new WP_REST_Response(['status' => 'success'], 200);
+	}
 }
 
 // Hook para capturar carrito
@@ -2772,125 +2891,7 @@ function wse_pro_show_license_notice_in_settings() {
             <?php
         }
     }
-    /**
-     * ========================================
-     * LÓGICA ROMPEHIELOS (ANTI-BLOQUEO)
-     * ========================================
-     */
-
-    /**
-     * Verifica si un teléfono es de confianza (ha respondido antes)
-     */
-    private function is_phone_trusted($phone) {
-        global $wpdb;
-        $table = $wpdb->prefix . 'wse_pro_client_interactions';
-        // Limpiar teléfono para búsqueda
-        $phone_clean = preg_replace('/[^0-9]/', '', $phone);
-        
-        // Buscamos si existe y es trusted
-        $is_trusted = $wpdb->get_var($wpdb->prepare(
-            "SELECT is_trusted FROM $table WHERE phone LIKE %s",
-            '%' . $wpdb->esc_like($phone_clean) // Búsqueda flexible por si acaso
-        ));
-        
-        return (bool) $is_trusted;
-    }
-
-    /**
-     * Marca un teléfono como de confianza
-     */
-    private function mark_phone_as_trusted($phone, $type = 'response') {
-        global $wpdb;
-        $table = $wpdb->prefix . 'wse_pro_client_interactions';
-        $phone_clean = preg_replace('/[^0-9]/', '', $phone);
-
-        // Intentar insertar o actualizar
-        $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE phone = %s", $phone_clean));
-
-        if ($exists) {
-            $wpdb->update($table, 
-                ['is_trusted' => 1, 'last_interaction' => current_time('mysql'), 'interaction_type' => $type],
-                ['phone' => $phone_clean]
-            );
-        } else {
-            $wpdb->insert($table, [
-                'phone' => $phone_clean,
-                'is_trusted' => 1,
-                'last_interaction' => current_time('mysql'),
-                'interaction_type' => $type,
-                'created_at' => current_time('mysql')
-            ]);
-        }
-        $this->log_info(sprintf(__('Teléfono %s marcado como DE CONFIANZA.', 'woowapp-smsenlinea-pro'), $phone_clean));
-    }
-
-    /**
-     * Manejador del Webhook (Recibe respuestas de SMSenlinea)
-     */
-    public function handle_incoming_webhook($request) {
-        $params = $request->get_params();
-        $this->log_info('Webhook recibido: ' . print_r($params, true));
-
-        // 1. Validar Secret (Seguridad básica)
-        // Nota: SMSenlinea manda el secret en la URL o header. 
-        // Para simplificar y no romper, validamos si la estructura parece correcta.
-        // Lo ideal sería comparar $_GET['secret'] con tu opción guardada si el panel lo permite enviar.
-        
-        // 2. Extraer datos
-        $type = isset($params['type']) ? $params['type'] : '';
-        $data = isset($params['data']) ? $params['data'] : [];
-        
-        if ($type !== 'whatsapp' || empty($data)) {
-            return new WP_REST_Response(['status' => 'ignored', 'message' => 'Not a WhatsApp message'], 200);
-        }
-
-        $from_number = isset($data['from']) ? $data['from'] : (isset($data['phone']) ? $data['phone'] : ''); // Ajuste según doc
-        $message_body = isset($data['message']) ? strtoupper(trim($data['message'])) : '';
-        
-        if (empty($from_number) || empty($message_body)) {
-            return new WP_REST_Response(['status' => 'error', 'message' => 'Missing data'], 400);
-        }
-
-        // 3. Obtener Palabras Clave de Configuración
-        $keywords_confirm = explode(',', strtoupper(get_option('wse_pro_icebreaker_keyword_confirm', 'SI,COMPLETAR,QUIERO')));
-        $keywords_cancel = explode(',', strtoupper(get_option('wse_pro_icebreaker_keyword_cancel', 'NO,CANCELAR,BAJA')));
-
-        // 4. Lógica de Respuesta
-        if (in_array($message_body, $keywords_confirm)) {
-            // --- EL CLIENTE QUIERE EL CARRITO ---
-            $this->mark_phone_as_trusted($from_number, 'confirmed_cart');
-            
-            // Buscar el último carrito activo de este teléfono
-            global $wpdb;
-            $cart = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM " . self::$abandoned_cart_table_name . " 
-                 WHERE (phone LIKE %s OR billing_phone LIKE %s) AND status = 'active' 
-                 ORDER BY created_at DESC LIMIT 1",
-                '%' . preg_replace('/[^0-9]/', '', $from_number),
-                '%' . preg_replace('/[^0-9]/', '', $from_number)
-            ));
-
-            if ($cart) {
-                // Forzar el envío del Mensaje #1 COMPLETO (con enlace)
-                $this->log_info("Cliente confirmó. Enviando carrito #{$cart->id} completo.");
-                $this->send_abandoned_cart_message($cart, 1, true); // true = forzar envío completo
-            }
-
-        } elseif (in_array($message_body, $keywords_cancel)) {
-            // --- EL CLIENTE CANCELA ---
-            global $wpdb;
-            // Marcar carrito como recuperado/cancelado para que no moleste más
-            $wpdb->query($wpdb->prepare(
-                "UPDATE " . self::$abandoned_cart_table_name . " SET status = 'cancelled' 
-                 WHERE (phone LIKE %s OR billing_phone LIKE %s) AND status = 'active'",
-                '%' . preg_replace('/[^0-9]/', '', $from_number),
-                '%' . preg_replace('/[^0-9]/', '', $from_number)
-            ));
-            $this->log_info("Cliente canceló. Carritos marcados como cancelados para $from_number.");
-        }
-
-        return new WP_REST_Response(['status' => 'success'], 200);
-	}
 }
 // Enganchar antes de que se muestren los campos de ajustes de WooWApp
 add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
+
