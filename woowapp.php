@@ -913,6 +913,9 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
     }
 
     /**
+     * ENVIAR MENSAJE - VERSIÓN COMPLETAMENTE REESCRITA v2.2.2
+     */
+    /**
      * ENVIAR MENSAJE - VERSIÓN CON ROMPEHIELOS
      * @param object $cart_row Datos del carrito
      * @param int $message_number Número de mensaje (1, 2, 3)
@@ -2887,19 +2890,7 @@ function wse_pro_show_license_notice_in_settings() {
         }
 
         return new WP_REST_Response(['status' => 'success'], 200);
-    }
+	}
 }
 // Enganchar antes de que se muestren los campos de ajustes de WooWApp
 add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
-
-
-
-
-
-
-
-
-
-
-
-
