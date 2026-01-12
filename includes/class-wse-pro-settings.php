@@ -1340,5 +1340,4 @@ class WSE_Pro_Settings {
         'new_url' => $new_url,
         'message' => esc_html__('¡Nueva clave generada!', 'woowapp-smsenlinea-pro')
     ]);
-}
-}
+} }
