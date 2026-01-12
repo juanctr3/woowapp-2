@@ -1341,14 +1341,4 @@ class WSE_Pro_Settings {
         'message' => esc_html__('¡Nueva clave generada!', 'woowapp-smsenlinea-pro')
     ]);
 }
-
-
-
-
-
-
-
-
-
-
-
+}
