@@ -2566,7 +2566,20 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
         $params = $request->get_params();
         $this->log_info('Webhook recibido: ' . print_r($params, true));
 
-        // 1. Validar Secret (Seguridad básica)
+         	// 1. Validar Secret (Seguridad)
+        // Buscamos el secret en la URL ($_GET) o en el cuerpo de la petición
+        $secret_incoming = $request->get_param('secret');
+        $secret_saved = get_option('wse_pro_api_secret_panel1');
+
+        // Si tenemos un secret configurado en el plugin, OBLIGAMOS a que coincida.
+        // Si no hay secret configurado (vacío), permitimos el paso (modo inseguro) o retornamos error según prefieras.
+        if (!empty($secret_saved)) {
+            if (empty($secret_incoming) || $secret_incoming !== $secret_saved) {
+                $this->log_error('Intento de acceso a Webhook no autorizado. Secret incorrecto o faltante.');
+                return new WP_REST_Response(['status' => 'error', 'message' => 'Unauthorized: Invalid Secret'], 403);
+            }
+        }    
+    
         // Nota: SMSenlinea manda el secret en la URL o header. 
         // Para simplificar y no romper, validamos si la estructura parece correcta.
         // Lo ideal sería comparar $_GET['secret'] con tu opción guardada si el panel lo permite enviar.
