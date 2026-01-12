@@ -65,6 +65,80 @@ class WSE_Pro_Settings {
             echo '<a href="' . esc_url($url) . '" class="nav-tab ' . esc_attr($class) . '">' . esc_html($name) . '</a>';
         }
         echo '</h2>';
+		// --- INICIO: DASHBOARD PLAN SMSENLINEA (PANEL 1) ---
+        if ($current_section === 'administration') {
+            // Obtenemos el secret real usando el ID que vi en tu archivo (wse_pro_api_secret_panel1)
+            $api_secret = get_option('wse_pro_api_secret_panel1');
+
+            if (!empty($api_secret)) {
+                // Usamos un transient (caché temporal) de 5 minutos para no ralentizar el admin consultando la API en cada clic
+                $datos_plan = get_transient('wse_pro_plan_cache_' . md5($api_secret));
+
+                if (false === $datos_plan) {
+                    $url = "https://whatsapp.smsenlinea.com/api/get/subscription?secret=" . $api_secret;
+                    $response = wp_remote_get($url, ['timeout' => 10]);
+
+                    if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                        $body = wp_remote_retrieve_body($response);
+                        $json = json_decode($body, true);
+                        if (isset($json['data'])) {
+                            $datos_plan = $json['data'];
+                            set_transient('wse_pro_plan_cache_' . md5($api_secret), $datos_plan, 5 * MINUTE_IN_SECONDS);
+                        }
+                    }
+                }
+
+                // Si tenemos datos (ya sea de la caché o recién traídos), mostramos el panel
+                if ($datos_plan) {
+                    $plan_name = isset($datos_plan['name']) ? $datos_plan['name'] : 'Desconocido';
+                    
+                    // Extraer uso de WhatsApp
+                    $wa_used = isset($datos_plan['usage']['wa_send']['used']) ? $datos_plan['usage']['wa_send']['used'] : 0;
+                    $wa_limit = isset($datos_plan['usage']['wa_send']['limit']) ? $datos_plan['usage']['wa_send']['limit'] : 0;
+                    $wa_display_limit = ($wa_limit == 0) ? __('Ilimitado', 'woowapp-smsenlinea-pro') : $wa_limit;
+                    
+                    // Extraer uso de SMS
+                    $sms_used = isset($datos_plan['usage']['sms_send']['used']) ? $datos_plan['usage']['sms_send']['used'] : 0;
+                    $sms_limit = isset($datos_plan['usage']['sms_send']['limit']) ? $datos_plan['usage']['sms_send']['limit'] : 0;
+                    $sms_display_limit = ($sms_limit == 0) ? __('Ilimitado', 'woowapp-smsenlinea-pro') : $sms_limit;
+
+                    ?>
+                    <div style="background: #fff; border: 1px solid #c3c4c7; border-left: 4px solid #25D366; box-shadow: 0 1px 1px rgba(0,0,0,.04); margin: 20px 0 30px; padding: 20px; max-width: 1000px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                            <div>
+                                <h2 style="margin: 0 0 15px 0; font-size: 18px;">
+                                    <?php esc_html_e('Plan Actual:', 'woowapp-smsenlinea-pro'); ?> 
+                                    <strong style="color: #2271b1;"><?php echo esc_html($plan_name); ?></strong>
+                                </h2>
+                                <div style="display: flex; gap: 40px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span class="dashicons dashicons-whatsapp" style="color: #25D366; font-size: 24px; width: 24px; height: 24px;"></span>
+                                        <div>
+                                            <span style="display: block; font-size: 12px; color: #646970;"><?php esc_html_e('Mensajes WhatsApp', 'woowapp-smsenlinea-pro'); ?></span>
+                                            <strong style="font-size: 16px;"><?php echo esc_html($wa_used); ?> / <?php echo esc_html($wa_display_limit); ?></strong>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span class="dashicons dashicons-email-alt" style="color: #0073aa; font-size: 24px; width: 24px; height: 24px;"></span>
+                                        <div>
+                                            <span style="display: block; font-size: 12px; color: #646970;"><?php esc_html_e('Mensajes SMS', 'woowapp-smsenlinea-pro'); ?></span>
+                                            <strong style="font-size: 16px;"><?php echo esc_html($sms_used); ?> / <?php echo esc_html($sms_display_limit); ?></strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <a href="https://smsenlinea.com/planes-whatsapp-y-sms/" target="_blank" class="button button-primary">
+                                    <?php esc_html_e('Mejorar mi Plan', 'woowapp-smsenlinea-pro'); ?> <span class="dashicons dashicons-external" style="vertical-align: middle;"></span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <?php
+                }
+            }
+        }
+        // --- FIN: DASHBOARD PLAN SMSENLINEA ---
 
         woocommerce_admin_fields($this->get_settings($current_section));
     }
@@ -1230,6 +1304,7 @@ class WSE_Pro_Settings {
     ]);
 }
 }
+
 
 
 
