@@ -231,12 +231,28 @@ final class WooWApp {
             KEY customer_phone (customer_phone),
             KEY chat_status (chat_status)
         ) $charset_collate;"; // <--- MODIFICACIÓN 1.3 - Bloque SQL
+        
+        // --- INICIO: TABLA DE INTERACCIONES (ROMPEHIELOS) ---
+$interactions_table = $wpdb->prefix . 'wse_pro_client_interactions';
+$sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
+    id BIGINT(20) NOT NULL AUTO_INCREMENT,
+    phone VARCHAR(40) NOT NULL,
+    is_trusted TINYINT(1) DEFAULT 0,
+    last_interaction DATETIME DEFAULT NULL,
+    interaction_type VARCHAR(50) DEFAULT '',
+    created_at DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY phone (phone),
+    KEY is_trusted (is_trusted)
+) $charset_collate;";
+// --- FIN: TABLA DE INTERACCIONES ---
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql_carts);
         dbDelta($sql_coupons);
         dbDelta($sql_tracking);
         dbDelta($sql_review_tracker); // <--- MODIFICACIÓN 1.3 - Llamada dbDelta
+        dbDelta($sql_interactions);
     }
 
     public function maybe_upgrade_database() {
@@ -2738,6 +2754,7 @@ function wse_pro_show_license_notice_in_settings() {
 }
 // Enganchar antes de que se muestren los campos de ajustes de WooWApp
 add_action('woocommerce_settings_tabs_woowapp', 'wse_pro_show_license_notice_in_settings', 5); // Prioridad 5 para mostrarlo arriba
+
 
 
 
