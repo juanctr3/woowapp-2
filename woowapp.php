@@ -912,27 +912,48 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
         }
     }
 
-    /**
-     * ENVIAR MENSAJE - VERSIÓN COMPLETAMENTE REESCRITA v2.2.2
-     */
-    /**
-     * ENVIAR MENSAJE - VERSIÓN CON ROMPEHIELOS
+/**
+     * ENVIAR MENSAJE - VERSIÓN ROBUSTA CON ROMPEHIELOS Y RESPALDO
      * @param object $cart_row Datos del carrito
      * @param int $message_number Número de mensaje (1, 2, 3)
-     * @param bool $force_full_content Si es true, ignora el rompehielos y envía el mensaje completo (usado por el webhook)
+     * @param bool $force_full_content Si es true, ignora el rompehielos y envía el mensaje completo
      */
     private function send_abandoned_cart_message($cart_row, $message_number, $force_full_content = false) {
         global $wpdb;
         
         $this->log_info(sprintf(__('Iniciando envío mensaje #%d para carrito #%d', 'woowapp-smsenlinea-pro'), $message_number, $cart_row->id));
         
-        // 1. Validar estado (si no es forzado)
+        // 1. Validar estado (si no es forzado por webhook)
         if (!$force_full_content && $cart_row->status !== 'active') {
             return false;
         }
+
+        // --- BÚSQUEDA Y VALIDACIÓN DE TELÉFONO MEJORADA ---
+        $phone_to_send = '';
+
+        // A. Intentar desde datos del carrito (Prioridad Billing)
+        if (!empty($cart_row->billing_phone)) {
+            $phone_to_send = $cart_row->billing_phone;
+        } elseif (!empty($cart_row->phone)) {
+            $phone_to_send = $cart_row->phone;
+        }
+
+        // B. Plan de Respaldo: Si está vacío, buscar en el perfil del usuario (si existe)
+        if (empty($phone_to_send) && !empty($cart_row->user_id) && $cart_row->user_id > 0) {
+            $user_phone = get_user_meta($cart_row->user_id, 'billing_phone', true);
+            if (!empty($user_phone)) {
+                $phone_to_send = $user_phone;
+                $this->log_info(sprintf(__('Teléfono recuperado desde perfil de usuario (ID %d) para carrito #%d.', 'woowapp-smsenlinea-pro'), $cart_row->user_id, $cart_row->id));
+            }
+        }
+        
+        // C. Validación Final: Si sigue vacío, abortamos misión sin errores fatales
+        if (empty($phone_to_send)) {
+            $this->log_info(sprintf(__('AVISO: Envío omitido para carrito #%d. No se encontró número de teléfono en el carrito ni en el usuario.', 'woowapp-smsenlinea-pro'), $cart_row->id));
+            return false; 
+        }
         
         // 2. Verificar duplicados (si no es forzado)
-        // Si es forzado (por webhook), permitimos reenviar el #1 aunque ya esté marcado como "sent" (que sería el rompehielos)
         $messages_sent = explode(',', $cart_row->messages_sent);
         if (!$force_full_content && isset($messages_sent[$message_number - 1]) && $messages_sent[$message_number - 1] == '1') {
             $this->log_info(sprintf(__('Mensaje #%d ya enviado anteriormente', 'woowapp-smsenlinea-pro'), $message_number));
@@ -941,7 +962,6 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
 
         // --- LÓGICA ROMPEHIELOS ---
         $use_icebreaker = false;
-        $phone_to_send = !empty($cart_row->billing_phone) ? $cart_row->billing_phone : $cart_row->phone;
 
         // Solo aplicamos rompehielos para el Mensaje #1
         if ($message_number == 1 && !$force_full_content) {
@@ -973,7 +993,7 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
             return false;
         }
         
-        // 4. Generar cupón (Solo si es mensaje completo, no gastemos cupones en rompehielos)
+        // 4. Generar cupón (Solo si NO es rompehielos)
         $coupon_data = null;
         if (!$use_icebreaker) {
             $coupon_enabled = get_option("wse_pro_abandoned_cart_coupon_enable_{$message_number}", 'no');
@@ -1011,20 +1031,16 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
             'billing_country' => $cart_row->billing_country
         ];
 
-        // Cooldown solo para mensajes automáticos, no forzados
+        // Cooldown solo para mensajes automáticos
         if (!$force_full_content) {
-             // ... (Tu código de cooldown existente aquí, lo omito para brevedad pero mantenlo si lo tienes) ...
+             // Mantener cooldown si existía lógica aquí
         }
 
         $result = $api_handler->send_message($phone_to_send, $message, $cart_obj, 'customer');
         
         // 7. Procesar resultado
         if ($result['success']) {
-            // SIEMPRE marcamos como enviado el #1, incluso si fue rompehielos.
-            // ¿Por qué? Para que el Cron no lo envíe otra vez en 5 minutos.
-            // Si el cliente responde "SI", el Webhook forzará el envío de nuevo con $force_full_content = true.
-            
-            if (!$force_full_content) { // Solo actualizamos la BD si es el envío programado
+            if (!$force_full_content) { 
                 $messages_sent = explode(',', $cart_row->messages_sent);
                 $messages_sent[$message_number - 1] = '1';
                 $wpdb->update(
@@ -2566,23 +2582,21 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
         $params = $request->get_params();
         $this->log_info('Webhook recibido: ' . print_r($params, true));
 
-         	// 1. Validar Secret (Seguridad)
-        // Buscamos el secret en la URL ($_GET) o en el cuerpo de la petición
+        // 1. Validar Secret (USANDO LA NUEVA CLAVE DEDICADA)
         $secret_incoming = $request->get_param('secret');
-        $secret_saved = get_option('wse_pro_api_secret_panel1');
+        $secret_saved = get_option('wse_pro_webhook_secret');
 
-        // Si tenemos un secret configurado en el plugin, OBLIGAMOS a que coincida.
-        // Si no hay secret configurado (vacío), permitimos el paso (modo inseguro) o retornamos error según prefieras.
-        if (!empty($secret_saved)) {
-            if (empty($secret_incoming) || $secret_incoming !== $secret_saved) {
-                $this->log_error('Intento de acceso a Webhook no autorizado. Secret incorrecto o faltante.');
-                return new WP_REST_Response(['status' => 'error', 'message' => 'Unauthorized: Invalid Secret'], 403);
-            }
-        }    
-    
-        // Nota: SMSenlinea manda el secret en la URL o header. 
-        // Para simplificar y no romper, validamos si la estructura parece correcta.
-        // Lo ideal sería comparar $_GET['secret'] con tu opción guardada si el panel lo permite enviar.
+        // A. Verificar que el administrador haya configurado la clave
+        if (empty($secret_saved)) {
+            $this->log_error('Error: No se ha configurado la "Clave Secreta del Webhook" en los ajustes del plugin.');
+            return new WP_REST_Response(['status' => 'error', 'message' => 'Configuration Error: Webhook Secret not set'], 500);
+        }
+
+        // B. Verificar que la clave recibida coincida
+        if (empty($secret_incoming) || $secret_incoming !== $secret_saved) {
+            $this->log_error('Acceso denegado. Secret recibido no coincide con el guardado.');
+            return new WP_REST_Response(['status' => 'error', 'message' => 'Unauthorized: Invalid Secret'], 403);
+        }
         
         // 2. Extraer datos
         $type = isset($params['type']) ? $params['type'] : '';
@@ -2592,7 +2606,7 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
             return new WP_REST_Response(['status' => 'ignored', 'message' => 'Not a WhatsApp message'], 200);
         }
 
-        $from_number = isset($data['from']) ? $data['from'] : (isset($data['phone']) ? $data['phone'] : ''); // Ajuste según doc
+        $from_number = isset($data['from']) ? $data['from'] : (isset($data['phone']) ? $data['phone'] : ''); 
         $message_body = isset($data['message']) ? strtoupper(trim($data['message'])) : '';
         
         if (empty($from_number) || empty($message_body)) {
@@ -2627,7 +2641,7 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
         } elseif (in_array($message_body, $keywords_cancel)) {
             // --- EL CLIENTE CANCELA ---
             global $wpdb;
-            // Marcar carrito como recuperado/cancelado para que no moleste más
+            // Marcar carrito como recuperado/cancelado
             $wpdb->query($wpdb->prepare(
                 "UPDATE " . self::$abandoned_cart_table_name . " SET status = 'cancelled' 
                  WHERE (phone LIKE %s OR billing_phone LIKE %s) AND status = 'active'",
@@ -2638,7 +2652,7 @@ $sql_interactions = "CREATE TABLE IF NOT EXISTS $interactions_table (
         }
 
         return new WP_REST_Response(['status' => 'success'], 200);
-	}
+    }
 }
 
 // Hook para capturar carrito
