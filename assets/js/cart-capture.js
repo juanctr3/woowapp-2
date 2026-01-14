@@ -538,7 +538,26 @@ jQuery(document).ready(function($) {
     // ==========================================
     // 🚀 INICIALIZACIÓN
     // ==========================================
+	/**
+     * EL SABUESO: Detecta autocompletado en incógnito y fuerza la captura
+     * Revisa cada 2.5 segundos si aparecieron datos mágicamente
+     */
+    function startPolling() {
+        setInterval(function() {
+            // Solo intentamos si no se está procesando ya
+            if (isProcessing) return;
 
+            // Obtenemos los valores visuales actuales directamente
+            const currentPhone = getFieldValue('billing_phone');
+            const currentEmail = getFieldValue('billing_email');
+            
+            // Si hay datos visibles (autocompletados), intentamos enviar
+            // (La función captureAndSend ya tiene protección interna contra duplicados)
+            if (currentPhone || currentEmail) {
+                captureAndSend();
+            }
+        }, 2500); // Intervalo de 2.5 segundos
+    }
     /**
      * Inicializar el script
      */
@@ -552,7 +571,8 @@ jQuery(document).ready(function($) {
             }
             return;
         }
-
+		
+    
         if (SERVER_CONFIG.debug) {
             console.log('%c✅ Formulario de checkout ENCONTRADO', 'color: #10b981; font-weight: bold');
         }
@@ -578,7 +598,8 @@ jQuery(document).ready(function($) {
             }
             captureAndSend();
         }, 60000);
-
+		
+    		startPolling();
         if (SERVER_CONFIG.debug) {
             console.log('%c🎉 WooWApp inicializado correctamente', 'color: #10b981; font-weight: bold; font-size: 14px');
         }
